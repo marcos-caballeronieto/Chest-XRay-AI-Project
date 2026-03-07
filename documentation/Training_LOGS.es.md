@@ -107,7 +107,7 @@ En lugar de bajar los Falsos Negativos, han subido de 19 a 25 respecto a nuestro
 
 ### 📊 Resultados (Epoch 5)
 * **Loss (Train / Val):** 0.1157 / 0.1070
-* **Accuracy General:** 96.47% ⭐ *(Mayor precisión general hasta este momento)*
+* **Accuracy General:** 96.47% *(Mayor precisión general hasta este momento)*
 
 | Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Exp A (Baseline) |
 | :--- | :--- | :--- | :--- |
@@ -175,10 +175,33 @@ Aunque el *Accuracy* general bajó al 94.84% y los Falsos Positivos aumentaron a
 
 ---
 
-## 🧪 Experimento E: Test-Time Augmentation (TTA) y Consenso
-### ⚙️ Configuración y Objetivo
-* **Técnica:** TTA (Inferencia múltiple) + Ensembling (Votación).
-* **Descripción:** Para aumentar la robustez del modelo ante imágenes dudosas, no evaluaremos la radiografía una sola vez. En tiempo de inferencia, generaremos 3 versiones de la misma imagen (original, rotada levemente y con zoom). El modelo predecirá sobre las 3 y aplicaremos una lógica de votación (ej. si 2 de 3 indican Neumonía, el diagnóstico final es Neumonía). 
+## 🧪 Experimento E: Test-Time Augmentation (TTA) y Consenso (Votación Mayoritaria)
+
+### ⚙️ Configuración
+* **Modelo Base:** El mejor modelo en pesos (Exp C2 - Pesos 1.0 / 1.2).
+* **Técnica:** TTA (Test-Time Augmentation) con "Hard Voting".
+* **Descripción:** En fase de inferencia, no pasamos la imagen una sola vez. Generamos 3 variantes en tiempo real por cada paciente:
+  1. Imagen Original (Resize + Normalize).
+  2. Imagen Rotada (10 grados).
+  3. Imagen con Zoom (CenterCrop).
+* **Regla de decisión:** El modelo emite 3 votos independientes. Si la suma de votos positivos (Neumonía) es $\ge 2$, el diagnóstico final es Neumonía.
+
+### 📊 Resultados (Epoch 5 + Inferencia TTA)
+* **Accuracy General:** 97.23% ⭐ *(Récord absoluto del proyecto)*
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Mejor Modelo (Exp C2) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **6** | ⚠️ 6 enfermos graves sin tratamiento. | 🏆 **Mejora récord (-14)** |
+| **Falsos Positivos (FP)** | 23 | 💸 23 sanos sometidos a más pruebas. | 📉 Empeora ligeramente (+6) pero iguala al baseline. |
+| **Aciertos Neumonía (TP)** | 771 | Diagnósticos correctos. (Sensibilidad: **99.2%**) | ⬆️ Aumenta (+14) |
+| **Aciertos Normales (TN)** | 247 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-6) |
+
+### 🧠 Análisis (COnclusión Inferencia TTA)
+Este experimento demuestra que aumentar el esfuerzo en la fase de inferencia puede superar a las optimizaciones del entrenamiento. 
+
+Al forzar un consenso de 3 vías (TTA), el modelo ha demostrado una robustez espectacular frente a posibles sesgos de posición o encuadre en las radiografías. Hemos logrado la mejor métrica clínica (Sensibilidad del 99.2%, con solo 6 Falsos Negativos) manteniendo los Falsos Positivos a raya y logrando el pico máximo de *Accuracy* general del proyecto (97.23%).
+
+**Veredicto** El sistema de producción (*Backend*) implementará el modelo C2 (`[1.0, 1.2]`) y utilizará esta 3-transformation pipeline y votación mayoritaria para cada nueva radiografía.
 
 
 
