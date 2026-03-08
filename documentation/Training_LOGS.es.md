@@ -31,7 +31,7 @@ En un entorno médico, la asimetría del error es crítica:
 | **Aciertos Normales (TN)** | 247 | Pacientes sanos dados de alta correctamente. |
 
 ### 🧠 Análisis (Conclusión del Exp. A)
-El experimento sirve como un *baseline* excepcional. Alcanzar casi un 96% de precisión en solo 5 épocas demuestra la potencia del Transfer Learning. El modelo no sufre de *overfitting* (la pérdida de validación es menor que la de entrenamiento). 
+El experimento sirve como un *baseline* excepcional. Alcanzar casi un 96% de precisión en solo 5 epochs demuestra la potencia del Transfer Learning. El modelo no sufre de *overfitting* (la pérdida de validación es menor que la de entrenamiento). 
 
 Sin embargo, desde el punto de vista del producto, **19 Falsos Negativos es una cifra de riesgo**. El modelo es demasiado "equilibrado". Necesitamos sesgarlo para que sea más conservador a la hora de predecir que un paciente está "Sano".
 
@@ -211,6 +211,75 @@ Al forzar un consenso de 3 vías (TTA), el modelo ha demostrado una robustez esp
 ### ⚙️ Configuración y Objetivo
 * **Técnica:** Cambio de Función de Pérdida a *Focal Loss*.
 * **Descripción:** Dejaremos de usar `CrossEntropyLoss` y los pesos estáticos. Implementaremos *Focal Loss*, una función diseñada específicamente para datasets desbalanceados. Esta función reduce dinámicamente el peso de las imágenes "fáciles" y concentra toda la atención matemática de la red en los ejemplos "difíciles" (los Falsos Negativos históricos), obligando al modelo a aprender patrones más complejos.
+
+### 📊 Resultados Temporales (Epoch 5)
+* **Loss (Train / Val):** 0.0395 / 0.0321
+* **Accuracy General:** 95.51%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Exp A (Baseline) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | 24 | ⚠️ 24 enfermos graves sin tratamiento. | 📉 Empeora levemente (+5) |
+| **Falsos Positivos (FP)** | 23 | 💸 23 sanos sometidos a más pruebas. | ↔️ Igual |
+| **Aciertos Neumonía (TP)** | 753 | Diagnósticos correctos. | ⬇️ Disminuye (-5) |
+| **Aciertos Normales (TN)** | 247 | Pacientes sanos dados de alta. | ↔️ Igual |
+
+### 🧠 Análisis (Conclusión del Exp. F - Fase 1)
+Aunque los números absolutos en la Epoch 5 (24 FN) aún no superan a nuestro Baseline histórico (19 FN), la tendencia de la métrica es reveladora. La *Focal Loss* comenzó desorientada (alcanzando 114 FN en la Epoch 2), pero al obligar al modelo a concentrarse exclusivamente en los ejemplos difíciles, ha provocado una caída drástica y sostenida de los errores.
+
+El análisis de las curvas de aprendizaje indica que la pérdida de validación sigue descendiendo fuertemente (0.0321) sin signos de *overfitting*. **El modelo no ha convergido.** **Próximos pasos:** Como dicta la intuición analítica, 5 epochs no son suficientes para que la Focal Loss optimice los patrones complejos de este dataset. Procederemos a un **Sub-experimento F2**, aumentando el ciclo de entrenamiento a **15 epochs** para permitir que la red alcance su máximo potencial.
+
+### 📌 Sub-experimento F2: Focal Loss a Largo Plazo (15 Epochs)
+
+### ⚙️ Configuración
+* **Arquitectura:** ResNet18 (Transfer Learning, capa `fc` reseteada).
+* **Función de Pérdida:** `Focal Loss` (gamma=2.0).
+* **Epochs:** 15 (Aumento significativo respecto a las 5 habituales).
+* **Hipótesis:** Observando que en la Epoch 5 el modelo aún no había convergido (la pérdida seguía bajando en picado), extendimos el entrenamiento a 15 epochs asumiendo que la *Focal Loss* necesitaba más tiempo para resolver los patrones de los Falsos Negativos.
+
+### 📊 Resultados (Epoch 15)
+* **Loss (Train / Val):** 0.0325 / 0.0304
+* **Accuracy General:** 96.28%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Mejor Modelo (Exp C2) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | 27 | ⚠️ 27 enfermos graves sin tratamiento. | ❌ Empeora (+7) |
+| **Falsos Positivos (FP)** | **12** | 💸 12 sanos sometidos a pruebas. | 🏆 **Mejora récord (-5)** |
+| **Aciertos Neumonía (TP)** | 750 | Diagnósticos correctos. | ⬇️ Disminuye (-7) |
+| **Aciertos Normales (TN)** | 258 | Pacientes sanos dados de alta. | ⬆️ Aumenta (+5) |
+
+### 🧠 Análisis (Conclusión del Exp. F2)
+**El límite de las funciones de pérdida complejas.** Ampliar el entrenamiento a 15 epochs permitió que la red convergiera maravillosamente desde el punto de vista estadístico (alcanzando un envidiable 96.28% de precisión y un récord de solo 12 Falsos Positivos). La *Focal Loss* hizo a la red increíblemente segura a la hora de detectar pulmones sanos.
+
+Sin embargo, para nuestra métrica clínica crítica (Recall de Neumonía), no se acerca al experimento anterior. Los Falsos Negativos se estancaron en 27. 
+
+**Veredicto :** Queda empíricamente demostrado en este proyecto que para forzar un sesgo clínico extremo (como bajar los FN a un solo dígito), las técnicas de post-procesamiento en la inferencia (**Threshold Tuning y TTA**) son necesarias y más baratas computacionalmente y controlables que intentar alterar el núcleo del entrenamiento con pesos o funciones de pérdida complejas.
+
+**Siguientes pasos:** Aplicaremos las tecnicas de post-procesado para mejorar el rendimiento de este modelo e intentar superar los resultados anteriores.
+
+---
+
+## 🧪 Experimento G: Focal Loss + Threshold Tuning (La Búsqueda del Cero)
+
+### ⚙️ Configuración
+* **Modelo Base:** El modelo entrenado con Focal Loss a 15 épocas (Exp F2).
+* **Técnica:** Barrido de Umbral de Decisión (*Threshold Sweep*) en fase de inferencia.
+* **Hipótesis:** Sabiendo que la Focal Loss generó una alta variabilidad al final del entrenamiento, usamos la calibración probabilística para encontrar el punto exacto donde la Sensibilidad se maximiza sin destruir la Especificidad.
+
+### 📊 Resultados (Comparativa de Umbrales)
+
+| Umbral | Accuracy | Falsos Negativos (FN) | Falsos Positivos (FP) | Implicación / Trade-off |
+| :---: | :---: | :---: | :---: | :--- |
+| **0.50 (Base)** | 95.70% | 8 | 37 | Conservador por defecto. |
+| **0.45** | 94.27% | 6 | 54 | Similar al TTA, pero con más FP. |
+| **0.40** | 93.79% | **3** | 62 | **Punto Dulce Clínico.** Riesgo letal mínimo (solo 3 FN) y carga hospitalaria moderada. |
+| **0.35** | 91.69% | 2 | 85 | Alta paranoia. |
+| **0.30** | 89.40% | **0** | 111 | **Recall del 100%.** Triaje perfecto. Ningún enfermo se escapa, a costa de colapsar la sala de pruebas. |
+
+### 🧠 Análisis (Conclusión del Exp. G)
+Este experimento representa el hito del **100% de Recall**, así como el entrenamiento de un modelo con Falsos Negativos mínimos y preción general alta. Hemos demostrado que combinando una penalización dinámica en entrenamiento (*Focal Loss*) con una corrección probabilística en inferencia (*Threshold Tuning*), podemos forzar a la red a alcanzar un **100% de Sensibilidad (0 Falsos Negativos al 30%)**.
+
+**Aplicación:** Si este modelo se despliega en un hospital real, el sistema debe permitir al Jefe de Radiología mover este umbral mediante un *slider* en la interfaz web. En temporada alta (hospital saturado), usarán el umbral del `0.40` o `0.45` para filtrar a los más graves sin colapsar el sistema. En protocolos de triaje ultra-seguros, bajarán el umbral al `0.30` o `0.35`.
+
 
 ---
 
