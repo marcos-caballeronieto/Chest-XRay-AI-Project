@@ -306,7 +306,33 @@ Aunque no constituye el modelo más preciso, si que es de los que mejor balance 
 
 ---
 
-## 🧪 Experimento G: Arquitectura Especializada (DenseNet121)
+## 🧪 Experimento I: Arquitectura Especializada (DenseNet121)
 ### ⚙️ Configuración y Objetivo
 * **Técnica:** Cambio de Arquitectura Base (Transfer Learning).
 * **Descripción:** ResNet18 es rápido y eficiente, pero DenseNet121 es el *gold standard* en la literatura médica (utilizado en el modelo CheXNet de la Universidad de Stanford). Sus conexiones densas entre capas preservan mejor la información de alta frecuencia (texturas sutiles), lo cual es crítico para detectar infiltraciones pulmonares borrosas que ResNet podría pasar por alto.
+
+### 📌 Sub-experimento I1: DenseNet121 Baseline (Pesos Neutros)
+
+### ⚙️ Configuración
+* **Arquitectura:** DenseNet121 (Transfer Learning, base congelada, nueva capa `classifier` reseteada).
+* **Optimizador:** Adam (lr=0.001) entrenando solo el clasificador.
+* **Función de Pérdida:** `CrossEntropyLoss` con pesos `[1.0, 1.0]`.
+* **Hipótesis:** Comprobar si una arquitectura especializada en imagen médica mejora el *baseline* inicial sin necesidad de técnicas adicionales.
+
+### 📊 Resultados (Epoch 5)
+* **Loss (Train / Val):** 0.1545 / 0.1343
+* **Accuracy General:** 94.75%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Exp A (ResNet Baseline) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **6** | ⚠️ 6 enfermos graves sin tratamiento. | 🌟 **Mejora masiva (-13)** (Sobre ResNet18)|
+| **Falsos Positivos (FP)** | 49 | 💸 49 sanos sometidos a pruebas. | 📉 Empeora (+26) |
+| **Aciertos Neumonía (TP)** | 771 | Diagnósticos correctos. | ⬆️ Aumenta (+13) |
+| **Aciertos Normales (TN)** | 221 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-26) |
+
+### 🧠 Análisis (Conclusión del Exp. I1)
+**La importancia del *Gold Standard*.** Cambiar el motor de nuestra IA ha marcado una diferencia brutal. Sin aplicar balanceo de pesos, Focal Loss, ni Threshold Tuning, la arquitectura DenseNet121 logra nativamente **6 Falsos Negativos** (igualando nuestro mejor modelo ResNet con TTA).
+
+Esto demuestra que sus conexiones densas extraen mejor las características radiológicas. El *trade-off* nativo de este modelo es una mayor sensibilidad (Detecta casi todo), a costa de reducir la especificidad (aumentan los Falsos Positivos a 49 y el Accuracy baja ligeramente al 94.75%).
+
+El siguiente paso sería aplicar las tecnicas que hemos encontrado más efecticas (Focal Loss + TTA) con el objetivo de comprobar si podemos mejorar el modelo del Experimento H.
