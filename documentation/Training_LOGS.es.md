@@ -474,3 +474,44 @@ Sin embargo, su precisión general se desplomó del 94% al 72.44%. ¿Por qué? A
 La intuición de pivotar hacia DenseNet121 ha sido un acierto técnico. Al enfrentarse al *Domain Shift* del nuevo hospital (Test Set), esta arquitectura ha demostrado ser intrínsecamente más robusta que una arquitectura sencilla sobre-optimizada. 
 
 Ha mejorado la precisión general casi un 6% (subiendo al 78.04%) y ha recuperado a 40 pacientes sanos que la ResNet habría mandado a pruebas innecesarias (bajando los Falsos Positivos de 172 a 132). El *trade-off* es que hemos perdido el "Triaje Perfecto" (pasando de 0 a 5 Falsos Negativos), pero a nivel global, este modelo base soporta mucho mejor el cambio de dominio en el mundo real porque no arrastra los sesgos de una función de pérdida agresiva (*Focal Loss*).
+Probaremos con TTA para intentar mejorar la precisión general.
+
+### 🧪 Evaluación 3: DenseNet121 + TTA (El Consenso)
+
+### ⚙️ Configuración
+* **Modelo:** DenseNet121 entrenado con pesos neutros a 5 epochs (Exp I1).
+* **Inferencia:** Test-Time Augmentation (TTA) de 3 vías.
+* **Objetivo:** Comprobar si forzar un consenso geométrico sobre la arquitectura más robusta logra el modelo de triaje definitivo frente al *Domain Shift*.
+
+### 📊 Resultados (Test Set)
+* **Accuracy General:** 73.56%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs DenseNet Pura |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **1** | 🏆 **Triaje Casi Perfecto.** Solo 1 enfermo sin detectar. | 🌟 Mejora (-4) |
+| **Falsos Positivos (FP)** | 164 | ⚠️ Paranoia clínica inducida por el TTA. | 📉 Empeora (+32) |
+| **Aciertos Neumonía (TP)** | 389 | Diagnósticos correctos de enfermedad. | ⬆️ Aumenta (+4) |
+| **Aciertos Normales (TN)** | 70 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-32) |
+
+### 🧠 Análisis
+La aplicación de TTA ha demostrado actuar como un "multiplicador de sensibilidad". Frente a datos de una distribución distinta (*Domain Shift*), obligar al modelo a evaluar 3 variaciones de la imagen provoca que cualquier mínima anomalía visual se marque como Neumonía. 
+Aun así la preción del modelo ha empeorado y no está cerca del rendimiento del entrenamiento, así que reentrenaremos con una nueva estrategia que evite el **Over-fitting** que demuestra el modelo al ver imagenes nuevas.
+
+---
+
+## 🧪 Experimento J: Especialización Médica y Fine-Tuning (Estrategia de Generalización)
+
+### ⚙️ Configuración y Estrategia
+* **Arquitectura:** DenseNet121.
+* **Técnica:** *Deep Fine-Tuning* + *Input Scaling* + *Heavy Augmentation*.
+* **Descripción:** Tras detectar que el modelo sufre ante el **Domain Shift** (caída de precisión del 94% al 78% al cambiar de dataset, lo que le pasaría en un hospital nuevo por ejemplo), abandonamos el aprendizaje superficial para aplicar tres mejoras de ingeniería:
+
+1.  **Descongelamiento Selectivo (Unfreezing):** Se desbloquearán los últimos dos bloques densos (*Dense Blocks*) del modelo. Esto permite que los filtros internos se re-especialicen en texturas de tejido pulmonar opaco en lugar de formas genéricas de ImageNet.
+2.  **Aumento de Datos de Alta Variabilidad:** Implementación de `ColorJitter` (brillo, contraste y saturación) y `RandomGrayscale` para simular diferentes calibraciones de escáneres y obligar al modelo a ignorar el ruido visual del "hospital nuevo".
+3.  **Incremento de Resolución (448x448):** Duplicamos el área de píxeles procesada para preservar detalles de infiltración sutiles que se pierden en la compresión estándar de 224px.
+
+### 🎯 Hipótesis sobre la precisión
+Al especializar los filtros internos y entrenar con mayor resolución, buscamos romper el techo de cristal del 78% de precisión en el Test Set. El objetivo es alcanzar un **Accuracy > 85%** manteniendo un **Recall clínico > 95%**, demostrando que el modelo es robusto para un analizar imagenes con caracteristicas diferentes a las imagenes con las que ha sido entrenado.
+
+### 🧠 Justificación Técnica (MLOps)
+La sobre-optimización del entrenamiento anterior (Focal Loss) generó un sesgo hacia el conjunto de validación, resultando en paranoia clínica (Falsos Positivos masivos) ante datos nuevos. Este experimento representa el paso de "ajuste de caja negra" a "especialización de dominio médico", esencial para cualquier sistema de IA en producción.
