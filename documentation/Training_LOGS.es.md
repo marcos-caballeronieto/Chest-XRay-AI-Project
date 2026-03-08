@@ -336,3 +336,85 @@ Aunque no constituye el modelo más preciso, si que es de los que mejor balance 
 Esto demuestra que sus conexiones densas extraen mejor las características radiológicas. El *trade-off* nativo de este modelo es una mayor sensibilidad (Detecta casi todo), a costa de reducir la especificidad (aumentan los Falsos Positivos a 49 y el Accuracy baja ligeramente al 94.75%).
 
 El siguiente paso sería aplicar las tecnicas que hemos encontrado más efecticas (Focal Loss + TTA) con el objetivo de comprobar si podemos mejorar el modelo del Experimento H.
+
+### 📌 Sub-experimento I2: DenseNet121 + Focal Loss (Entrenamiento Base)
+
+### ⚙️ Configuración
+* **Arquitectura:** DenseNet121 (Transfer Learning, capa `classifier` reseteada).
+* **Función de Pérdida:** `Focal Loss` (gamma=2.0).
+* **Epochs:** 15.
+* **Hipótesis:** Inyectar la penalización dinámica (Focal Loss) en la arquitectura médica *Gold Standard* (DenseNet121) preparará un modelo base matemáticamente superior. Aunque sabemos que la Focal Loss pura genera inestabilidad, sentará las bases para aplicar técnicas de post-procesado (TTA y Threshold Tuning).
+
+### 📊 Resultados (Epoch 15)
+* **Loss (Train / Val):** 0.0346 / 0.0288
+* **Accuracy General:** 95.51%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Exp I1 (DenseNet Base) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | 24 | ⚠️ 24 enfermos graves sin tratamiento. | ❌ Empeora (+18) |
+| **Falsos Positivos (FP)** | 23 | 💸 23 sanos sometidos a pruebas. | ✅ Mejora (-26) |
+| **Aciertos Neumonía (TP)** | 753 | Diagnósticos correctos. | ⬇️ Disminuye (-18) |
+| **Aciertos Normales (TN)** | 247 | Pacientes sanos dados de alta. | ⬆️ Aumenta (+26) |
+
+### 🧠 Análisis (Conclusión del Exp. I2)
+Al igual que ocurrió con ResNet18, aplicar *Focal Loss* sin post-procesado genera inestabilidad en las últimas épocas (pasando de 19 FN en la época 14 a 24 FN en la época 15). Además, a nivel bruto no logra superar los increíbles 6 FN que nos dio DenseNet "de fábrica".
+
+Sin embargo, la Focal Loss ha cumplido su función: ha forzado a la red a dudar en los casos difíciles, reduciendo drásticamente las falsas alarmas (los Falsos Positivos bajan de 49 a 23 respecto al baseline de DenseNet). Ahora tenemos un "cerebro" altamente especializado listo para ser calibrado en la fase de inferencia.
+
+### 📌 Sub-experimento I3: DenseNet121 + Focal Loss + TTA
+
+### ⚙️ Configuración
+* **Modelo Base:** Entrenado con `Focal Loss` a 15 epochs (Exp I2).
+* **Técnica:** Test-Time Augmentation (TTA) con votación mayoritaria (3 vías).
+* **Hipótesis:** Comprobar si la combinación de la arquitectura más compleja (DenseNet), la pérdida dinámica (Focal Loss) y el consenso en inferencia (TTA) produce el modelo definitivo.
+
+### 📊 Resultados (Inferencia con TTA)
+* **Accuracy General:** 95.70%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Exp I2 (Sin TTA) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | 8 | ⚠️ 8 enfermos graves sin tratamiento. | 🌟 **Mejora (-16)** |
+| **Falsos Positivos (FP)** | 37 | 💸 37 sanos sometidos a pruebas. | 📉 Empeora (+14) |
+| **Aciertos Neumonía (TP)** | 769 | Diagnósticos correctos. | ⬆️ Aumenta (+16) |
+| **Aciertos Normales (TN)** | 233 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-14) |
+
+### 🧠 Análisis (Conclusión del Exp. I3)
+Aunque el TTA logró estabilizar el modelo (reduciendo los FN de 24 a 8), este resultado es clínicamente inferior a nuestra ResNet18 con TTA (3 FN) y a nuestra DenseNet121 base (6 FN). 
+
+Esto demuestra que inyectar *Focal Loss* en una arquitectura que ya es intrínsecamente muy sensible (DenseNet) sobrecomplica el espacio de características. 
+**Próximo paso:** La lógica dicta que debemos pivotar. Si DenseNet121 con pesos neutros (Exp I1) logró 6 Falsos Negativos por sí sola, aplicaremos TTA directamente sobre ese modelo base limpio para ver si alcanzamos el rendimiento perfecto.
+
+### 📌 Sub-experimento I4: DenseNet121 Baseline + TTA
+
+### ⚙️ Configuración
+* **Modelo Base:** Entrenado con `CrossEntropyLoss` y pesos neutros a 5 epochs (Exp I1).
+* **Técnica:** Test-Time Augmentation (TTA) con votación mayoritaria (3 vías).
+* **Hipótesis:** Aplicar la técnica de consenso probabilístico (TTA) directamente sobre el *baseline* limpio de DenseNet121, evitando la sobre-optimización de la *Focal Loss*, para intentar superar el récord de ResNet18.
+
+### 📊 Resultados (Inferencia con TTA)
+* **Accuracy General:** 92.36%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Exp I1 (DenseNet Base) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **5** | ⚠️ 5 enfermos graves sin tratamiento. | Mejora leve (-1) |
+| **Falsos Positivos (FP)** | 75 | 💸 75 sanos sometidos a pruebas. | 📉 Empeora drásticamente (+26) |
+| **Aciertos Neumonía (TP)** | 772 | Diagnósticos correctos. | ⬆️ Aumenta (+1) |
+| **Aciertos Normales (TN)** | 195 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-26) |
+
+### 🧠 Análisis (Conclusión del Exp. I4)
+**El límite de la sensibilidad clínica.** Al aplicar el consenso geométrico (TTA) sobre el modelo base de DenseNet, logramos reducir los Falsos Negativos a 5. Sin embargo, el modelo se vuelve extremadamente paranoico: los Falsos Positivos se disparan a 75 y la precisión general cae al 92.36%. 
+
+DenseNet121 es una arquitectura tan profunda y sensible a texturas sutiles que, al recibir múltiples variaciones de la misma imagen (TTA), tiende a sobre-diagnosticar la enfermedad.
+
+---
+
+## 🏆 Veredicto y Conclusión Final del Proyecto
+
+Tras evaluar múltiples arquitecturas, funciones de pérdida y técnicas de post-procesamiento en inferencia, el sistema de triaje médico implementará la configuración desarrollada en el **Experimento H**:
+
+* **Arquitectura:** ResNet18 (Ligera y rápida para entornos web).
+* **Entrenamiento:** *Focal Loss* a 15 epochs.
+* **Inferencia:** *Test-Time Augmentation (TTA)* de 3 vías.
+
+**Justificación de la lógica clínica:**
+Esta configuración demostró ser la más equilibrada matemáticamente y la más segura clínicamente. Logró un **Recall del 99.6%**, permitiendo que solo **3 pacientes** (Falsos Negativos) escaparan al diagnóstico, frente a los 19 pacientes perdidos del *baseline* original. Además, mantuvo la carga hospitalaria controlada (59 Falsos Positivos) y una excelente precisión general del **94.08%**, superando ampliamente los intentos de optimización con arquitecturas más complejas como DenseNet121.
