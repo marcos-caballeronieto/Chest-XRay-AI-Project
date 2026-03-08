@@ -1,5 +1,12 @@
 # 🫁 Registro de Experimentación del Modelo: Detección de Neumonía
 
+## ⚠️ Aviso de alcance (solo aprendizaje)
+Este documento pertenece a un **proyecto educativo de aprendizaje en IA**.
+
+**No es un dispositivo médico, no está validado clínicamente y no debe usarse para diagnóstico ni para decisiones asistenciales reales.**
+
+Todas las referencias a "entorno clínico", "mundo real", "hospital" o "producción" se usan aquí únicamente como **simulación didáctica** para analizar *trade-offs* entre métricas.
+
 ## 📌 Contexto Clínico y Objetivo de Optimización
 El dataset de Kaggle (Paul Mooney) presenta un fuerte desbalance natural de clases (aproximadamente 3:1 a favor de imágenes con neumonía frente a normales). 
 
@@ -69,7 +76,7 @@ Sin embargo, en el contexto médico, el resultado es inaceptable. Como el modelo
 ### ⚙️ Configuración y Objetivo
 * **Arquitectura:** ResNet18.
 * **Técnica:** Variación iterativa de la función de pérdida (`CrossEntropyLoss`).
-* **Descripción:** Tras observar que el balance matemático para compensar la asimetria del dataset (Exp B) no mejora los resultados de preción general y aumenta el numero de *Falsos Negativos*, exploraremos pequeñas penalizaciones a la clase Neumonía para forzar un sesgo clínico hacia el Recall (minimizar Falsos Negativos), con el objetivo de disminuir los falsos Negativos a un número menor que en el *baseline*. 
+* **Descripción:** Tras observar que el balance matemático para compensar la asimetría del dataset (Exp B) no mejora los resultados de precisión general y aumenta el número de *Falsos Negativos*, exploraremos pequeñas penalizaciones a la clase Neumonía para forzar un sesgo clínico hacia el Recall (minimizar Falsos Negativos), con el objetivo de disminuir los falsos Negativos a un número menor que en el *baseline*. 
 
 ### 📌 Sub-experimento C1: Empuje Clínico Suave (Pesos 1.0 / 1.5)
 
@@ -91,11 +98,11 @@ Sin embargo, en el contexto médico, el resultado es inaceptable. Como el modelo
 | **Aciertos Normales (TN)** | 249 | Pacientes sanos dados de alta correctamente. | ⬆️ Aumenta |
 
 ### 🧠 Análisis (Conclusión del Exp. C1)
-Aumentar la penalización sobre los datos de Nuemonia no ha ayudado a disminuir Falsos Negativos. Incluso un "empujoncito" suave (1.5) a la clase que ya es mayoritaria por naturaleza resulta contraproducente para nuestro objetivo clínico. 
+Aumentar la penalización sobre los datos de Neumonía no ha ayudado a disminuir Falsos Negativos. Incluso un "empujoncito" suave (1.5) a la clase que ya es mayoritaria por naturaleza resulta contraproducente para nuestro objetivo clínico. 
 
 En lugar de bajar los Falsos Negativos, han subido de 19 a 25 respecto a nuestro modelo de pesos neutros. Esto significa que manipular la `CrossEntropyLoss` a favor de la clase ya dominante desorienta al optimizador. Curiosamente, la red se ha vuelto *mejor* detectando pacientes sanos (los Falsos Positivos han bajado de 23 a 21), pero hemos perdido sensibilidad clínica.
 
-**Conclusión:** Tocar los pesos de la función de pérdida no es la herramienta adecuada para este dataset específico. Queda demostrado que el entrenamiento más estable para extraer los patrones correctos es el de los pesos neutros (`[1.0, 1.0]`). Aun así aprovechando que el entrenamiento no es costoso a nivel computacional, vamos a intentar comprobar el efecto de una penalización ligeramente menor para la Neumonia.
+**Conclusión:** Tocar los pesos de la función de pérdida no es la herramienta adecuada para este dataset específico. Queda demostrado que el entrenamiento más estable para extraer los patrones correctos es el de los pesos neutros (`[1.0, 1.0]`). Aun así, aprovechando que el entrenamiento no es costoso a nivel computacional, vamos a intentar comprobar el efecto de una penalización ligeramente menor para la Neumonía.
 
 ### 📌 Sub-experimento C2: Empuje Clínico Ligero (Pesos 1.0 / 1.2)
 
@@ -146,9 +153,9 @@ Sin embargo, desde la perspectiva estricta de nuestro objetivo (minimizar los Fa
 | **Aciertos Normales (TN)** | 237 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-16) |
 
 ### 🧠 Análisis (Conclusión del Exp. D)
-Este experimento demuestra que separar la optimización matemática (entrenamiento) de la optimización clinica (evaluación) es buena estrategia para un dataset desbalanceado como este. 
+Este experimento demuestra que separar la optimización matemática (entrenamiento) de la optimización clínica (evaluación) es buena estrategia para un dataset desbalanceado como este. 
 
-Mantuvimos el "cerebro" estable y preciso del Experimento C2, pero cambiamos sus instrucciones de diagnóstico. El resultado es el modelo más seguro y viable para un entorno médico real que hemos conseguido hasta ahora, sacrificando apenas un 0.8% de *Accuracy* general a cambio de reducir los errores fatales (FN) casi a la mitad.
+Mantuvimos el "cerebro" estable y preciso del Experimento C2, pero cambiamos sus instrucciones de diagnóstico. El resultado es el mejor compromiso dentro de esta simulación, sacrificando apenas un 0.8% de *Accuracy* general a cambio de reducir los errores fatales (FN) casi a la mitad.
 
 ### 📌 Sub-experimento D2: Umbral Clínico Agresivo (20%)
 
@@ -169,9 +176,9 @@ Mantuvimos el "cerebro" estable y preciso del Experimento C2, pero cambiamos sus
 ### 🧠 Análisis (Conclusión del Exp. D2)
 Bajar el umbral de decisión al 20% ha demostrado ser una estrategia muy efectiva. Hemos logrado una **Sensibilidad del 99.1%**, reduciendo los Falsos Negativos a una cifra de un solo dígito (7). 
 
-Aunque el *Accuracy* general bajó al 94.84% y los Falsos Positivos aumentaron a 47, este es el *trade-off* (intercambio) exacto que requiere un sistema de triaje médico. El coste de revisar manualmente a 47 pacientes sanos es infinitamente menor que el coste vital de omitir a 13 pacientes enfermos adicionales (la diferencia con nuestro modelo anterior).
+En esta simulación, este es el *trade-off* (intercambio) más coherente para un escenario de triaje: el coste de revisar manualmente a 47 pacientes sanos es menor que el coste de omitir a 13 pacientes enfermos adicionales (la diferencia con nuestro modelo anterior).
 
-**Veredicto:** El pipeline final podría utilizará los pesos de entrenamiento del Experimento C2 (`[1.0, 1.2]`) combinados con un filtro de inferencia basado en un umbral probabilístico del `0.20`.
+**Veredicto (simulación):** Como conclusión de laboratorio, el pipeline candidato podría utilizar los pesos de entrenamiento del Experimento C2 (`[1.0, 1.2]`) combinados con un filtro de inferencia basado en un umbral probabilístico del `0.20`.
 
 ---
 
@@ -196,12 +203,12 @@ Aunque el *Accuracy* general bajó al 94.84% y los Falsos Positivos aumentaron a
 | **Aciertos Neumonía (TP)** | 771 | Diagnósticos correctos. (Sensibilidad: **99.2%**) | ⬆️ Aumenta (+14) |
 | **Aciertos Normales (TN)** | 247 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-6) |
 
-### 🧠 Análisis (COnclusión Inferencia TTA)
+### 🧠 Análisis (Conclusión Inferencia TTA)
 Este experimento demuestra que aumentar el esfuerzo en la fase de inferencia puede superar a las optimizaciones del entrenamiento. 
 
 Al forzar un consenso de 3 vías (TTA), el modelo ha demostrado una robustez espectacular frente a posibles sesgos de posición o encuadre en las radiografías. Hemos logrado la mejor métrica clínica (Sensibilidad del 99.2%, con solo 6 Falsos Negativos) manteniendo los Falsos Positivos a raya y logrando el pico máximo de *Accuracy* general del proyecto (97.23%).
 
-**Veredicto** El sistema de producción (*Backend*) implementará el modelo C2 (`[1.0, 1.2]`) y utilizará esta 3-transformation pipeline y votación mayoritaria para cada nueva radiografía.
+**Veredicto (simulación):** Para la siguiente fase experimental, tomamos como referencia el modelo C2 (`[1.0, 1.2]`) junto con un pipeline de 3 transformaciones y votación mayoritaria en inferencia.
 
 
 
@@ -254,7 +261,7 @@ Sin embargo, para nuestra métrica clínica crítica (Recall de Neumonía), no s
 
 **Veredicto :** Queda empíricamente demostrado en este proyecto que para forzar un sesgo clínico extremo (como bajar los FN a un solo dígito), las técnicas de post-procesamiento en la inferencia (**Threshold Tuning y TTA**) son necesarias y más baratas computacionalmente y controlables que intentar alterar el núcleo del entrenamiento con pesos o funciones de pérdida complejas.
 
-**Siguientes pasos:** Aplicaremos las tecnicas de post-procesado para mejorar el rendimiento de este modelo e intentar superar los resultados anteriores.
+**Siguientes pasos:** Aplicaremos las técnicas de post-procesado para mejorar el rendimiento de este modelo e intentar superar los resultados anteriores.
 
 ---
 
@@ -276,9 +283,9 @@ Sin embargo, para nuestra métrica clínica crítica (Recall de Neumonía), no s
 | **0.30** | 89.40% | **0** | 111 | **Recall del 100%.** Triaje perfecto. Ningún enfermo se escapa, a costa de colapsar la sala de pruebas. |
 
 ### 🧠 Análisis (Conclusión del Exp. G)
-Este experimento representa el hito del **100% de Recall**, así como el entrenamiento de un modelo con Falsos Negativos mínimos y preción general alta. Hemos demostrado que combinando una penalización dinámica en entrenamiento (*Focal Loss*) con una corrección probabilística en inferencia (*Threshold Tuning*), podemos forzar a la red a alcanzar un **100% de Sensibilidad (0 Falsos Negativos al 30%)**.
+Este experimento representa el hito del **100% de Recall**, así como el entrenamiento de un modelo con Falsos Negativos mínimos y precisión general alta. Hemos demostrado que combinando una penalización dinámica en entrenamiento (*Focal Loss*) con una corrección probabilística en inferencia (*Threshold Tuning*), podemos forzar a la red a alcanzar un **100% de Sensibilidad (0 Falsos Negativos al 30%)**.
 
-**Aplicación:** Si este modelo se despliega en un hospital real, el sistema debe permitir al Jefe de Radiología mover este umbral mediante un *slider* en la interfaz web. En temporada alta (hospital saturado), usarán el umbral del `0.40` o `0.45` para filtrar a los más graves sin colapsar el sistema. En protocolos de triaje ultra-seguros, bajarán el umbral al `0.30` o `0.35`.
+**Aplicación (simulada):** En una demo educativa, este umbral podría exponerse como un *slider* para visualizar el intercambio entre sensibilidad y falsas alarmas en distintos escenarios de carga.
 
 ---
 
@@ -300,8 +307,8 @@ Este experimento representa el hito del **100% de Recall**, así como el entrena
 | **Aciertos Normales (TN)** | 211 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-22) |
 
 ### 🧠 Análisis (Conclusión del experimento H)
-Este experimento supone una ligera mejora sobre el uso de Threshold Tuning. Hemos demostrado que la combinación de una penalización dinámica en el entrenamiento (*Focal Loss*) junto con un sistema de consenso en la inferencia (*TTA*) produce un modelo médico que limita fuertemente los Falsos negativos manteniendo una alta preción global. 
-Aunque no constituye el modelo más preciso, si que es de los que mejor balance hace entre limitar los falsos negativos y mantener la precisión.
+Este experimento supone una ligera mejora sobre el uso de Threshold Tuning. Hemos demostrado que la combinación de una penalización dinámica en el entrenamiento (*Focal Loss*) junto con un sistema de consenso en la inferencia (*TTA*) produce un modelo experimental que limita fuertemente los Falsos negativos manteniendo una alta precisión global. 
+Aunque no constituye el modelo más preciso, sí que es de los que mejor balance hace entre limitar los falsos negativos y mantener la precisión.
 
 
 ---
@@ -335,7 +342,7 @@ Aunque no constituye el modelo más preciso, si que es de los que mejor balance 
 
 Esto demuestra que sus conexiones densas extraen mejor las características radiológicas. El *trade-off* nativo de este modelo es una mayor sensibilidad (Detecta casi todo), a costa de reducir la especificidad (aumentan los Falsos Positivos a 49 y el Accuracy baja ligeramente al 94.75%).
 
-El siguiente paso sería aplicar las tecnicas que hemos encontrado más efecticas (Focal Loss + TTA) con el objetivo de comprobar si podemos mejorar el modelo del Experimento H.
+El siguiente paso sería aplicar las técnicas que hemos encontrado más efectivas (Focal Loss + TTA) con el objetivo de comprobar si podemos mejorar el modelo del Experimento H.
 
 ### 📌 Sub-experimento I2: DenseNet121 + Focal Loss (Entrenamiento Base)
 
@@ -408,32 +415,32 @@ DenseNet121 es una arquitectura tan profunda y sensible a texturas sutiles que, 
 
 ---
 
-## 🏆 Veredicto y Conclusión Final del Proyecto
+## 🏁 Veredicto Provisional (solo validación interna)
 
-Tras evaluar múltiples arquitecturas, funciones de pérdida y técnicas de post-procesamiento en inferencia, el sistema de triaje médico implementará la configuración desarrollada en el **Experimento H**:
+Tras evaluar múltiples arquitecturas, funciones de pérdida y técnicas de post-procesamiento en inferencia, la configuración que se tomó como referencia experimental fue la desarrollada en el **Experimento H**:
 
 * **Arquitectura:** ResNet18 (Ligera y rápida para entornos web).
 * **Entrenamiento:** *Focal Loss* a 15 epochs.
 * **Inferencia:** *Test-Time Augmentation (TTA)* de 3 vías.
 
-**Justificación de la lógica clínica:**
-Esta configuración demostró ser la más equilibrada matemáticamente y la más segura clínicamente. Logró un **Recall del 99.6%**, permitiendo que solo **3 pacientes** (Falsos Negativos) escaparan al diagnóstico, frente a los 19 pacientes perdidos del *baseline* original. Además, mantuvo la carga hospitalaria controlada (59 Falsos Positivos) y una excelente precisión general del **94.08%**, superando ampliamente los intentos de optimización con arquitecturas más complejas como DenseNet121.
+**Justificación de la lógica clínica (simulada):**
+Esta configuración demostró ser la más equilibrada dentro de la validación interna. Logró un **Recall del 99.6%**, permitiendo que solo **3 pacientes** (Falsos Negativos) escaparan al diagnóstico, frente a los 19 pacientes perdidos del *baseline* original. Además, mantuvo la carga hospitalaria relativamente controlada (59 Falsos Positivos) y una precisión general del **94.08%**. Este resultado fue **provisional** y sirvió únicamente para decidir qué variante llevar al test externo.
 
 ---
 
-## Evaluación en el Mundo Real (Test Set) y "Domain Shift"
+## Evaluación Externa Simulada (Test Set) y "Domain Shift"
 
 ### 📌 Contexto de la Evaluación Final
-Hasta este punto, todas las optimizaciones (*Focal Loss*, *Thresholding*, *TTA*) se ajustaron utilizando el conjunto de validación (`val`). Sin embargo, en un entorno hospitalario real, los modelos deben enfrentarse a radiografías provenientes de máquinas distintas, con calibraciones, contrastes y resoluciones diferentes. 
+Hasta este punto, todas las optimizaciones (*Focal Loss*, *Thresholding*, *TTA*) se ajustaron utilizando el conjunto de validación (`val`). Sin embargo, en un escenario hospitalario simulado, los modelos deben enfrentarse a radiografías provenientes de máquinas distintas, con calibraciones, contrastes y resoluciones diferentes. 
 
 Para simular esto, evaluaremos el modelo contra **624 imágenes (Carpeta `test`)** que la red jamás ha visto. En la literatura médica, es conocido que este subconjunto de Kaggle presenta un fuerte **Domain Shift** (Cambio de Dominio) respecto a las imágenes de entrenamiento.
 
-### 🧪 Evaluación 1: Nuestro Modelo Campeón (ResNet18 + Focal Loss + TTA)
+### 🧪 Evaluación 1: Modelo de Referencia (ResNet18 + Focal Loss + TTA)
 
 ### ⚙️ Configuración
 * **Modelo:** ResNet18 entrenado con Focal Loss a 15 epochs (Exp H).
 * **Inferencia:** Test-Time Augmentation (TTA) de 3 vías.
-* **Objetivo:** Comprobar si la combinación ganadora de la fase de validación mantiene su eficacia ante radiografías de un "hospital distinto".
+* **Objetivo:** Comprobar si la combinación ganadora de la fase de validación mantiene su eficacia ante radiografías de un dominio distinto.
 
 ### 📊 Resultados (Test Set)
 * **Accuracy General:** 72.44%
@@ -471,9 +478,9 @@ Sin embargo, su precisión general se desplomó del 94% al 72.44%. ¿Por qué? A
 | **Aciertos Normales (TN)** | 102 | Pacientes sanos dados de alta. | ⬆️ Aumenta (+40) |
 
 ### 🧠 Análisis (Conclusión del cambio a DenseNet121)
-La intuición de pivotar hacia DenseNet121 ha sido un acierto técnico. Al enfrentarse al *Domain Shift* del nuevo hospital (Test Set), esta arquitectura ha demostrado ser intrínsecamente más robusta que una arquitectura sencilla sobre-optimizada. 
+La intuición de pivotar hacia DenseNet121 ha sido un acierto técnico. Al enfrentarse al *Domain Shift* del nuevo dominio externo (Test Set), esta arquitectura ha demostrado ser intrínsecamente más robusta que una arquitectura sencilla sobre-optimizada. 
 
-Ha mejorado la precisión general casi un 6% (subiendo al 78.04%) y ha recuperado a 40 pacientes sanos que la ResNet habría mandado a pruebas innecesarias (bajando los Falsos Positivos de 172 a 132). El *trade-off* es que hemos perdido el "Triaje Perfecto" (pasando de 0 a 5 Falsos Negativos), pero a nivel global, este modelo base soporta mucho mejor el cambio de dominio en el mundo real porque no arrastra los sesgos de una función de pérdida agresiva (*Focal Loss*).
+Ha mejorado la precisión general casi un 6% (subiendo al 78.04%) y ha recuperado a 40 pacientes sanos que la ResNet habría mandado a pruebas innecesarias (bajando los Falsos Positivos de 172 a 132). El *trade-off* es que hemos perdido el "Triaje Perfecto" (pasando de 0 a 5 Falsos Negativos), pero a nivel global, este modelo base soporta mucho mejor el cambio de dominio en evaluación externa porque no arrastra los sesgos de una función de pérdida agresiva (*Focal Loss*).
 Probaremos con TTA para intentar mejorar la precisión general.
 
 ### 🧪 Evaluación 3: DenseNet121 + TTA (El Consenso)
@@ -481,7 +488,7 @@ Probaremos con TTA para intentar mejorar la precisión general.
 ### ⚙️ Configuración
 * **Modelo:** DenseNet121 entrenado con pesos neutros a 5 epochs (Exp I1).
 * **Inferencia:** Test-Time Augmentation (TTA) de 3 vías.
-* **Objetivo:** Comprobar si forzar un consenso geométrico sobre la arquitectura más robusta logra el modelo de triaje definitivo frente al *Domain Shift*.
+* **Objetivo:** Comprobar si forzar un consenso geométrico sobre la arquitectura más robusta logra el mejor compromiso experimental frente al *Domain Shift*.
 
 ### 📊 Resultados (Test Set)
 * **Accuracy General:** 73.56%
@@ -495,7 +502,7 @@ Probaremos con TTA para intentar mejorar la precisión general.
 
 ### 🧠 Análisis
 La aplicación de TTA ha demostrado actuar como un "multiplicador de sensibilidad". Frente a datos de una distribución distinta (*Domain Shift*), obligar al modelo a evaluar 3 variaciones de la imagen provoca que cualquier mínima anomalía visual se marque como Neumonía. 
-Aun así la preción del modelo ha empeorado y no está cerca del rendimiento del entrenamiento, así que reentrenaremos con una nueva estrategia que evite el **Over-fitting** que demuestra el modelo al ver imagenes nuevas.
+Aun así la precisión del modelo ha empeorado y no está cerca del rendimiento del entrenamiento, así que reentrenaremos con una nueva estrategia que evite el **Over-fitting** que demuestra el modelo al ver imágenes nuevas.
 
 ---
 
@@ -504,14 +511,22 @@ Aun así la preción del modelo ha empeorado y no está cerca del rendimiento de
 ### ⚙️ Configuración y Estrategia
 * **Arquitectura:** DenseNet121.
 * **Técnica:** *Deep Fine-Tuning* + *Input Scaling* + *Heavy Augmentation*.
-* **Descripción:** Tras detectar que el modelo sufre ante el **Domain Shift** (caída de precisión del 94% al 78% al cambiar de dataset, lo que le pasaría en un hospital nuevo por ejemplo), abandonamos el aprendizaje superficial para aplicar tres mejoras de ingeniería:
+* **Descripción:** Tras detectar que el modelo sufre ante el **Domain Shift** (caída de precisión del 94% al 78% al cambiar de dataset, simulando un cambio de centro), abandonamos el aprendizaje superficial para aplicar tres mejoras de ingeniería:
 
 1.  **Descongelamiento Selectivo (Unfreezing):** Se desbloquearán los últimos dos bloques densos (*Dense Blocks*) del modelo. Esto permite que los filtros internos se re-especialicen en texturas de tejido pulmonar opaco en lugar de formas genéricas de ImageNet.
-2.  **Aumento de Datos de Alta Variabilidad:** Implementación de `ColorJitter` (brillo, contraste y saturación) y `RandomGrayscale` para simular diferentes calibraciones de escáneres y obligar al modelo a ignorar el ruido visual del "hospital nuevo".
+2.  **Aumento de Datos de Alta Variabilidad:** Implementación de `ColorJitter` (brillo, contraste y saturación) y `RandomGrayscale` para simular diferentes calibraciones de escáneres y obligar al modelo a ignorar el ruido visual de un centro externo.
 3.  **Incremento de Resolución (448x448):** Duplicamos el área de píxeles procesada para preservar detalles de infiltración sutiles que se pierden en la compresión estándar de 224px.
 
 ### 🎯 Hipótesis sobre la precisión
-Al especializar los filtros internos y entrenar con mayor resolución, buscamos romper el techo de cristal del 78% de precisión en el Test Set. El objetivo es alcanzar un **Accuracy > 85%** manteniendo un **Recall clínico > 95%**, demostrando que el modelo es robusto para un analizar imagenes con caracteristicas diferentes a las imagenes con las que ha sido entrenado.
+Al especializar los filtros internos y entrenar con mayor resolución, buscamos romper el techo de cristal del 78% de precisión en el Test Set. El objetivo es alcanzar un **Accuracy > 85%** manteniendo un **Recall clínico > 95%**, demostrando que el modelo es robusto para analizar imágenes con características diferentes a las imágenes con las que ha sido entrenado.
 
 ### 🧠 Justificación Técnica (MLOps)
-La sobre-optimización del entrenamiento anterior (Focal Loss) generó un sesgo hacia el conjunto de validación, resultando en paranoia clínica (Falsos Positivos masivos) ante datos nuevos. Este experimento representa el paso de "ajuste de caja negra" a "especialización de dominio médico", esencial para cualquier sistema de IA en producción.
+La sobre-optimización del entrenamiento anterior (Focal Loss) generó un sesgo hacia el conjunto de validación, resultando en paranoia clínica (Falsos Positivos masivos) ante datos nuevos. Este experimento representa el paso de "ajuste de caja negra" a "especialización de dominio médico" dentro de un contexto de investigación aplicada.
+
+---
+
+## 🧾 Estado del proyecto (marco educativo)
+
+* Este registro documenta una **línea de aprendizaje experimental**, no un producto sanitario.
+* Ninguno de los modelos aquí descritos está validado para uso clínico, diagnóstico o triaje en pacientes reales.
+* Antes de cualquier uso asistencial real harían falta validación multicéntrica, revisión regulatoria, auditoría externa y supervisión médica formal.
