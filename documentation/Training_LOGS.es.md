@@ -261,7 +261,7 @@ Sin embargo, para nuestra métrica clínica crítica (Recall de Neumonía), no s
 ## 🧪 Experimento G: Focal Loss + Threshold Tuning (La Búsqueda del Cero)
 
 ### ⚙️ Configuración
-* **Modelo Base:** El modelo entrenado con Focal Loss a 15 épocas (Exp F2).
+* **Modelo Base:** El modelo entrenado con Focal Loss a 15 epochs (Exp F2).
 * **Técnica:** Barrido de Umbral de Decisión (*Threshold Sweep*) en fase de inferencia.
 * **Hipótesis:** Sabiendo que la Focal Loss generó una alta variabilidad al final del entrenamiento, usamos la calibración probabilística para encontrar el punto exacto donde la Sensibilidad se maximiza sin destruir la Especificidad.
 
@@ -279,6 +279,29 @@ Sin embargo, para nuestra métrica clínica crítica (Recall de Neumonía), no s
 Este experimento representa el hito del **100% de Recall**, así como el entrenamiento de un modelo con Falsos Negativos mínimos y preción general alta. Hemos demostrado que combinando una penalización dinámica en entrenamiento (*Focal Loss*) con una corrección probabilística en inferencia (*Threshold Tuning*), podemos forzar a la red a alcanzar un **100% de Sensibilidad (0 Falsos Negativos al 30%)**.
 
 **Aplicación:** Si este modelo se despliega en un hospital real, el sistema debe permitir al Jefe de Radiología mover este umbral mediante un *slider* en la interfaz web. En temporada alta (hospital saturado), usarán el umbral del `0.40` o `0.45` para filtrar a los más graves sin colapsar el sistema. En protocolos de triaje ultra-seguros, bajarán el umbral al `0.30` o `0.35`.
+
+---
+
+## 🧪 Experimento H: Focal Loss + TTA
+
+### ⚙️ Configuración
+* **Modelo Base:** Entrenado con `Focal Loss` a 15 epochs (Exp F2).
+* **Técnica:** Test-Time Augmentation (TTA) con votación mayoritaria (3 vías).
+* **Hipótesis:** La Focal Loss nos dio un modelo altamente sensible pero inestable en sus límites de decisión. Al aplicar TTA en inferencia, buscamos que el consenso geométrico absorba esa inestabilidad, logrando bajar los Falsos Negativos sin disparar los Falsos Positivos tanto como un simple ajuste de umbral.
+
+### 📊 Resultados (Inferencia con TTA)
+* **Accuracy General:** 94.08%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Exp F2 (Focal Loss Base) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **3** | ⚠️ 3 enfermos graves sin tratamiento. | 🌟 **Mejora masiva (-5)** (Sobre la base) |
+| **Falsos Positivos (FP)** | 59 | 💸 59 sanos sometidos a pruebas. | 📉 Empeora (+22) |
+| **Aciertos Neumonía (TP)** | 774 | Diagnósticos correctos. (Sensibilidad: 99.6%) | ⬆️ Aumenta (+5) |
+| **Aciertos Normales (TN)** | 211 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-22) |
+
+### 🧠 Análisis (Conclusión del experimento H)
+Este experimento supone una ligera mejora sobre el uso de Threshold Tuning. Hemos demostrado que la combinación de una penalización dinámica en el entrenamiento (*Focal Loss*) junto con un sistema de consenso en la inferencia (*TTA*) produce un modelo médico que limita fuertemente los Falsos negativos manteniendo una alta preción global. 
+Aunque no constituye el modelo más preciso, si que es de los que mejor balance hace entre limitar los falsos negativos y mantener la precisión.
 
 
 ---
