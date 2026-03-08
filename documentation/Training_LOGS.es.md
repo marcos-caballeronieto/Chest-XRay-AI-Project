@@ -418,3 +418,59 @@ Tras evaluar múltiples arquitecturas, funciones de pérdida y técnicas de post
 
 **Justificación de la lógica clínica:**
 Esta configuración demostró ser la más equilibrada matemáticamente y la más segura clínicamente. Logró un **Recall del 99.6%**, permitiendo que solo **3 pacientes** (Falsos Negativos) escaparan al diagnóstico, frente a los 19 pacientes perdidos del *baseline* original. Además, mantuvo la carga hospitalaria controlada (59 Falsos Positivos) y una excelente precisión general del **94.08%**, superando ampliamente los intentos de optimización con arquitecturas más complejas como DenseNet121.
+
+---
+
+## Evaluación en el Mundo Real (Test Set) y "Domain Shift"
+
+### 📌 Contexto de la Evaluación Final
+Hasta este punto, todas las optimizaciones (*Focal Loss*, *Thresholding*, *TTA*) se ajustaron utilizando el conjunto de validación (`val`). Sin embargo, en un entorno hospitalario real, los modelos deben enfrentarse a radiografías provenientes de máquinas distintas, con calibraciones, contrastes y resoluciones diferentes. 
+
+Para simular esto, evaluaremos el modelo contra **624 imágenes (Carpeta `test`)** que la red jamás ha visto. En la literatura médica, es conocido que este subconjunto de Kaggle presenta un fuerte **Domain Shift** (Cambio de Dominio) respecto a las imágenes de entrenamiento.
+
+### 🧪 Evaluación 1: Nuestro Modelo Campeón (ResNet18 + Focal Loss + TTA)
+
+### ⚙️ Configuración
+* **Modelo:** ResNet18 entrenado con Focal Loss a 15 epochs (Exp H).
+* **Inferencia:** Test-Time Augmentation (TTA) de 3 vías.
+* **Objetivo:** Comprobar si la combinación ganadora de la fase de validación mantiene su eficacia ante radiografías de un "hospital distinto".
+
+### 📊 Resultados (Test Set)
+* **Accuracy General:** 72.44%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs Validación (Exp H) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **0** | 🏆 **Triaje Perfecto (Recall 100%).** Ningún enfermo escapa. | 🌟 Mejora (-3) |
+| **Falsos Positivos (FP)** | 172 | ⚠️ Paranoia clínica. Carga hospitalaria masiva. | 📉 Empeora drásticamente (+113) |
+| **Aciertos Neumonía (TP)** | 390 | Diagnósticos correctos de enfermedad. | N/A (Cambio de dataset) |
+| **Aciertos Normales (TN)** | 62 | Dificultad extrema para dar altas médicas. | N/A (Cambio de dataset) |
+
+### 🧠 Análisis (El problema de la Sobre-optimización)
+El resultado es un caso de estudio clásico de *Domain Shift*. Desde una perspectiva estrictamente de seguridad vital, el modelo es perfecto: **0 Falsos Negativos** (detectó al 100% de los enfermos).
+
+Sin embargo, su precisión general se desplomó del 94% al 72.44%. ¿Por qué? Al utilizar una función de pérdida tan agresiva como la *Focal Loss*, combinada con una inspección exhaustiva (*TTA*), la ResNet18 se volvió hipersensible a las texturas del dataset original. Al enfrentarse a radiografías con una iluminación o contraste distinto (Test Set), el modelo entra en "paranoia conservadora": ante la mínima duda geométrica, diagnostica neumonía para evitar la penalización.
+
+**Decisión Técnica (Pivot):** La sobre-optimización matemática ha fracasado en la generalización. Si *forzar* a una red sencilla (ResNet) la vuelve paranoica ante datos nuevos, la solución de ingeniería correcta es evaluar cómo se comporta nuestra arquitectura intrínsecamente superior (DenseNet121) sin ningún tipo de truco matemático que vicie su aprendizaje.
+
+
+### 🧪 Evaluación 2: Plan B (DenseNet121 Baseline)
+
+### ⚙️ Configuración
+* **Modelo:** DenseNet121 entrenado con pesos neutros a 5 epochs (Exp I1).
+* **Inferencia:** Pura (Sin TTA).
+* **Objetivo:** Comprobar si el *Gold Standard* médico generaliza mejor ante el *Domain Shift* gracias a sus conexiones densas, sin usar técnicas que fuercen la sensibilidad artificialmente.
+
+### 📊 Resultados (Test Set)
+* **Accuracy General:** 78.04%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs ResNet (Exp H) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **5** | ⚠️ 5 enfermos sin tratamiento. Se pierde el "Triaje Perfecto", pero es un número muy bajo. | 📉 Empeora (+5) |
+| **Falsos Positivos (FP)** | 132 | 💸 Carga hospitalaria alta, pero controlada. | 🌟 Mejora (-40) |
+| **Aciertos Neumonía (TP)** | 385 | Diagnósticos correctos de enfermedad. | ⬇️ Disminuye (-5) |
+| **Aciertos Normales (TN)** | 102 | Pacientes sanos dados de alta. | ⬆️ Aumenta (+40) |
+
+### 🧠 Análisis (Conclusión del cambio a DenseNet121)
+La intuición de pivotar hacia DenseNet121 ha sido un acierto técnico. Al enfrentarse al *Domain Shift* del nuevo hospital (Test Set), esta arquitectura ha demostrado ser intrínsecamente más robusta que una arquitectura sencilla sobre-optimizada. 
+
+Ha mejorado la precisión general casi un 6% (subiendo al 78.04%) y ha recuperado a 40 pacientes sanos que la ResNet habría mandado a pruebas innecesarias (bajando los Falsos Positivos de 172 a 132). El *trade-off* es que hemos perdido el "Triaje Perfecto" (pasando de 0 a 5 Falsos Negativos), pero a nivel global, este modelo base soporta mucho mejor el cambio de dominio en el mundo real porque no arrastra los sesgos de una función de pérdida agresiva (*Focal Loss*).

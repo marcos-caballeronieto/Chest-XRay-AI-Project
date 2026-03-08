@@ -1,90 +1,77 @@
-# 🫁 Chest X-Ray Pneumonia ML Project Roadmap
+# 🫁 Chest X-Ray Pneumonia ML Project Roadmap (Clinical Optimization Edition)
 
-**Dataset:** [Chest X-Ray Images (Pneumonia) by Paul Mooney](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia)
-**Goal:** Build an end-to-end classification model with an explainable web interface.
-
----
-
-## Phase 1: Setup & Data Preparation (Days 1-3)
-*The goal here is to load the images and fix a known issue with this dataset (the tiny validation set).*
-
-- [ ] **Step 1: Environment Setup**
-  - Install Python, Jupyter Notebook (or use Google Colab).
-  - Install core libraries: `numpy`, `pandas`, `matplotlib`, `opencv-python`, `tensorflow` (or `pytorch`).
-- [ ] **Step 2: Load the Data**
-  - Write a script to iterate through the folders (`train`, `test`, `val`) and count the images.
-- [ ] **Step 3: Fix the Dataset Splits**
-  - *Dataset quirk:* The `val` folder only has 16 images.
-  - Combine `train` and `val` folders, then use a library like `scikit-learn` to create a new 80/20 train/validation split.
-- [ ] **Step 4: Exploratory Data Analysis (EDA)**
-  - Plot a bar chart showing the number of "NORMAL" vs "PNEUMONIA" images (Note the class imbalance).
-  - Plot a grid of 4 Normal and 4 Pneumonia X-rays to see what they look like.
-
-> **🤖 AI Prompt to use:** *"I am working with the Paul Mooney Chest X-Ray dataset in Python using [TensorFlow/PyTorch]. The default 'val' folder only has 16 images. Can you write a script to combine the train and val directories, and then split the combined data into an 80% training and 20% validation set using standard Python libraries?"*
+**Dataset:** Chest X-Ray Images (Pneumonia) by Paul Mooney
+**Goal:** Build an end-to-end classification model optimized for clinical triage (minimizing False Negatives) with an explainable web interface.
 
 ---
 
-## Phase 2: Model Training & Transfer Learning (Days 4-7)
-*Instead of building a model from scratch, you will use a pre-trained model (Transfer Learning) which is faster and more accurate.*
+## Phase 1: Setup & Clinical EDA (Days 1-3)
+*The goal here is to load the images, fix the validation split, and understand the clinical cost of errors.*
 
-- [ ] **Step 1: Data Augmentation**
-  - Apply transformations to the training data (slight rotations, zooming, flipping) to prevent overfitting.
-- [ ] **Step 2: Handle Class Imbalance**
-  - Calculate "class weights" so the model pays more attention to the "NORMAL" cases (since there are fewer of them).
-- [ ] **Step 3: Build the Model**
-  - Load a pre-trained model (e.g., `ResNet50` or `MobileNetV2`) without the top classification layers.
-  - Add your own dense layers on top to classify 2 categories (Normal vs. Pneumonia).
-- [ ] **Step 4: Train & Save**
-  - Train the model using your augmented data and class weights.
-  - Save the best model as a `.h5` or `.pth` file.
-
-> **🤖 AI Prompt to use:** *"Write a script using [TensorFlow/PyTorch] to load a pre-trained ResNet50 model for binary classification. Include an image data generator with basic data augmentation (rotation, zoom), and show me how to apply class weights to handle an imbalanced dataset."*
+* **Step 1: Environment Setup**
+    * Install Python, Jupyter Notebook, and core libraries: `numpy`, `pandas`, `matplotlib`, `opencv-python`, `torch` (PyTorch is recommended based on your logs), and `torchvision`.
+* **Step 2: Fix Dataset Splits & Load Data**
+    * Combine the existing `train` and `val` folders (since the default `val` only has 16 images) and create a robust 80/20 split.
+* **Step 3: Exploratory Data Analysis & Clinical Context**
+    * Analyze the natural class imbalance, which sits at approximately 3:1 in favor of pneumonia images.
+    * Define the business metric: In a medical setting, a False Negative (sending a sick patient home) is a severe health risk, while a False Positive (testing a healthy patient further) is a manageable cost.
 
 ---
 
-## Phase 3: Evaluation & Explainability (Days 8-10)
-*This is where you make the project stand out for recruiters.*
+## Phase 2: Model Training & Experimentation (Days 4-8)
+*Instead of just building a model, you will document the journey of finding the right loss function to handle the clinical asymmetry.* 
 
-- [ ] **Step 1: Evaluate Metrics**
-  - Run the model on the `test` folder.
-  - Generate a Confusion Matrix.
-  - Calculate Accuracy, Precision, Recall, and F1-Score. Focus heavily on **Recall** (you don't want to miss a pneumonia diagnosis).
-- [ ] **Step 2: Add Grad-CAM (Explainability)**
-  - Implement Gradient-weighted Class Activation Mapping (Grad-CAM).
-  - Generate heatmaps over the X-rays showing where the model "looked" to find the pneumonia.
-  - Save 5 examples of successful predictions with their heatmaps.
-
-> **🤖 AI Prompt to use:** *"I have trained a ResNet50 model for binary classification. I want to generate a Grad-CAM heatmap for a test image to see what the model is focusing on. Can you provide the Python code to generate and overlay a Grad-CAM heatmap on the original X-ray image?"*
+* **Step 1: Baseline Model (Experiment A)**
+    * Train a base ResNet18 model using Transfer Learning (frozen base, training only the `fc` layer) with standard `CrossEntropyLoss` and neutral weights.
+    * Observe that while accuracy is high (~95.99%), the number of False Negatives (19) is clinically unacceptable.
+* **Step 2: The Pitfall of Class Weights (Experiments B & C)**
+    * Experiment with mathematical class balancing (e.g., weights of `[4.0, 1.0]` and `[1.0, 1.5]`).
+    * Document how heavily penalizing the minority class breaks the gradients or makes the model too conservative, paradoxically *increasing* False Negatives.
+* **Step 3: Implementing Focal Loss (Experiment F)**
+    * Replace `CrossEntropyLoss` with Focal Loss ($\gamma=2.0$) to dynamically penalize "hard" examples (historical False Negatives) rather than using static weights.
+* **Step 4: Extended Training**
+    * Train the ResNet18 model with Focal Loss for 15 epochs, allowing the network enough time to resolve complex radiological patterns and minimize False Positives.
 
 ---
 
-## Phase 4: Web Application / UI (Days 11-14)
-*Getting the model out of the notebook and into a usable app.*
+## Phase 3: Post-Processing & Inferencia (Days 9-11)
+*This is where your project shines. You will separate mathematical training from clinical decision-making.*
 
-- [ ] **Step 1: Create a Streamlit App**
-  - Create a new file called `app.py`.
-  - Build a simple UI where a user can upload a `.jpg` or `.png` file.
-- [ ] **Step 2: Integrate the Model**
-  - Add code to `app.py` to load your saved model.
-  - Pass the uploaded image to the model and display the prediction ("Pneumonia Detected" or "Normal").
-- [ ] **Step 3: Display Explainability**
-  - Integrate the Grad-CAM code into the app.
-  - Display the heatmap side-by-side with the original uploaded image.
+* **Step 1: Threshold Tuning (Experiment D & G)**
+    * Extract the raw Softmax probabilities.
+    * Lower the decision threshold for Pneumonia from the default 0.50 to 0.30 or 0.20 to artificially force a drop in False Negatives.
+    * Document the trade-off: Achieving 100% Recall (0 FN) at a 0.30 threshold results in high False Positives, representing the "paranoia" limit of the model.
+* **Step 2: Test-Time Augmentation (Experiment E & H)**
+    * Implement TTA during inference. For every patient image, generate 3 variants in real-time: Original, Rotated (10 degrees), and Zoomed (CenterCrop). 
+    * Implement "Hard Voting": If the sum of positive votes is >= 2, the final diagnosis is Pneumonia.
+* **Step 3: Final Model Selection & Explainability**
+    * Combine the Focal Loss model (15 epochs) with the TTA pipeline, which yields the best clinical balance: 94.08% Accuracy, 99.6% Recall, and only 3 False Negatives.
+    * Implement Grad-CAM to generate heatmaps showing where the model "looked" to make its decision.
 
-> **🤖 AI Prompt to use:** *"I want to build a Streamlit web app for my image classification model. Write a Streamlit script that allows a user to upload an image, resizes the image to 224x224, passes it to a saved Keras/PyTorch model, and displays the predicted class on the screen."*
+---
+
+## Phase 4: Web Application / UI (Days 12-14)
+*Getting the triage system into a usable app for a hypothetical Radiology Department.*
+
+* **Step 1: Create a Streamlit App**
+    * Build a simple UI where a clinician can upload a `.jpg` or `.png` X-ray.
+* **Step 2: Integrate the TTA Pipeline**
+    * Load your saved ResNet18 (Focal Loss) `.pth` model.
+    * Implement the 3-way TTA logic directly in the `app.py` file so the web app uses the safest clinical pipeline.
+* **Step 3: Clinical Sliders & Explainability**
+    * Add a slider in the UI allowing the user to adjust the decision threshold (e.g., from conservative to high-sensitivity triage) based on your Threshold Tuning findings.
+    * Display the Grad-CAM heatmap side-by-side with the uploaded X-ray.
 
 ---
 
 ## Phase 5: Portfolio Packaging (Days 15-16)
-*Making it ready for your CV.*
+*Making your extensive experimentation stand out for recruiters.*
 
-- [ ] **Step 1: Clean the Code**
-  - Remove unnecessary print statements and messy cells from your Jupyter notebooks.
-- [ ] **Step 2: Create a `requirements.txt`**
-  - List all the libraries needed to run the app.
-- [ ] **Step 3: Write a Kick-Ass `README.md`**
-  - Include: Project title, what it does, a screenshot of the Streamlit app showing the heatmap, how to run it locally, and the results (Recall/Accuracy).
-- [ ] **Step 4: Upload to GitHub**
-  - Push the code, README, and `requirements.txt`. (Don't upload the whole dataset, link to Kaggle instead).
-
-> **🤖 AI Prompt to use:** *"I am finishing my machine learning project. Based on the following steps I took [paste brief summary], can you generate a professional README.md template for my GitHub repository? Include sections for Overview, Tech Stack, How to Run, and Results."*
+* **Step 1: Clean the Code**
+    * Organize your Jupyter notebook into clear sections matching your experiment logs (Baseline, Focal Loss, TTA, Thresholding).
+* **Step 2: Write a Data Science `README.md`**
+    * Highlight the **Business/Clinical Value**: Explain why you optimized for Recall over pure Accuracy.
+    * Showcase the final metrics clearly: **94.08% Accuracy | 99.6% Recall | Only 3 False Negatives**.
+    * Include a table comparing the Baseline model to the final Focal Loss + TTA model.
+* **Step 3: Upload to GitHub**
+    * Push the code, the `README.md`, and the `requirements.txt`.
