@@ -75,3 +75,15 @@
     * Include a table comparing the Baseline model to the final Focal Loss + TTA model.
 * **Step 3: Upload to GitHub**
     * Push the code, the `README.md`, and the `requirements.txt`.
+
+---
+
+## V2: Future Roadmap & Advanced Architecture (Post-MVP)
+*Addressing the "Shortcut Learning" (Clever Hans effect) discovered via Grad-CAM XAI to ensure clinical robustness.*
+
+* **Step 1: Lung Segmentation Pipeline (U-Net)**
+    * Implement a two-stage architecture where a dedicated segmentation model (e.g., U-Net) first generates a precise anatomical mask of the rib cage.
+    * Apply this mask to black out background noise, arms, and medical tubes before classification, forcing the core model to base its predictions exclusively on pure pulmonary parenchyma textures.
+* **Step 2: Attention Mechanisms & ViTs**
+    * Upgrade the classification engine by transitioning to Vision Transformers (ViTs) or integrating Attention Gates into the existing CNN architecture.
+    * Leverage these self-attention mechanisms to dynamically assign mathematical weight to central pathological patches, naturally attenuating peripheral visual noise without the need for hard morphological cropping.
