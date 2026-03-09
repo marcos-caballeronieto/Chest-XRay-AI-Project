@@ -523,6 +523,72 @@ Al especializar los filtros internos y entrenar con mayor resolución, buscamos 
 ### 🧠 Justificación Técnica (MLOps)
 La sobre-optimización del entrenamiento anterior (Focal Loss) generó un sesgo hacia el conjunto de validación, resultando en paranoia clínica (Falsos Positivos masivos) ante datos nuevos. Este experimento representa el paso de "ajuste de caja negra" a "especialización de dominio médico" dentro de un contexto de investigación aplicada.
 
+### 📊 Resultados del Entrenamiento (Fine-Tuning a 10 Epochs)
+
+* **Duración total:** 38 minutos y 51 segundos.
+* **Mejor Época (Punto Dulce):** Época 7.
+* **Rendimiento Máximo:** Val Loss: **0.0311** | Val Accuracy: **99.14%**
+
+| Fase del Entrenamiento | Comportamiento del Modelo | Análisis Técnico |
+| :--- | :--- | :--- |
+| **Épocas 1 - 5** | Aprendizaje estable. El *Val Loss* desciende progresivamente de 0.0548 a 0.0387. | El modelo asimila correctamente la nueva resolución (448px) y la distorsión de color sin perder el conocimiento previo de DenseNet. |
+| **Época 6** | ⚠️ **Primer pico de inestabilidad.** El *Val Loss* se dispara a 0.0860, mientras el *Train Loss* sigue bajando (0.0255). | Señal temprana de *Overfitting* (Sobreajuste). El modelo intenta memorizar las distorsiones de la "pista de obstáculos" de entrenamiento. |
+| **Época 7** | 🏆 **Recuperación y Récord Absoluto.** El modelo estabiliza sus gradientes, logrando un *Val Loss* mínimo histórico de **0.0311**. | El sistema de *Checkpointing* detecta este pico de generalización y guarda los pesos físicos del modelo en este instante exacto. |
+| **Épocas 8 - 10** | 🚨 **Colapso por Sobreajuste.** El *Train Loss* roza la perfección (0.0139), pero el *Val Loss* sufre un rebote masivo en la Época 9 (0.0898) y no logra recuperarse. | El modelo ha perdido la capacidad de generalizar y está sobre-optimizando los datos de entrenamiento. |
+
+### 🧠 Análisis (Conclusión Experimento J)
+Este ciclo de entrenamiento demuestra visualmente por qué el *Fine-Tuning* profundo es volátil.  Al descongelar millones de parámetros y usar aumentos de datos agresivos, la red neuronal sufre "picos de amnesia" o memorización (como se vio en las épocas 6 y 9). 
+
+Gracias a la implementación de **Model Checkpointing**, el script ignoró automáticamente la degradación de las últimas épocas y restauró en memoria el "cerebro" de la Época 7, garantizando que evaluaremos la versión más inteligente e imparcial de nuestra IA.
+
+Este es el mejor resultado que hemos conseguido, ahora comprobaremos mediante test si estos resultados se traducen a una mejoría con datasets diferentes.
+
+### 🧪 Evaluación 4: DenseNet121 Fine-Tuned (448px) Pura
+
+### ⚙️ Configuración
+* **Modelo:** DenseNet121 con capas profundas descongeladas (Exp J - Época 7).
+* **Inferencia:** Pura a alta resolución (448x448) sin TTA.
+* **Objetivo:** Comprobar si el modelo especializado en texturas radiológicas de alta resolución soporta mejor el *Domain Shift* del Test Set.
+
+### 📊 Resultados (Test Set)
+* **Accuracy General:** 81.57%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs DenseNet Base (Exp I1) |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **0** | 🏆 **Triaje Perfecto (Recall 100%).** Ningún enfermo escapa. | 🌟 Mejora Masiva (-5) |
+| **Falsos Positivos (FP)** | 115 | ⚠️ Paranoia clínica moderada. Carga hospitalaria manejable. | 🌟 Mejora (-17) |
+| **Aciertos Neumonía (TP)** | 390 | Diagnósticos correctos de enfermedad. | ⬆️ Aumenta (+5) |
+| **Aciertos Normales (TN)** | 119 | Pacientes sanos dados de alta. | ⬆️ Aumenta (+17) |
+
+### 🧠 Análisis 
+La estrategia de ingeniería (Fine-Tuning profundo + Aumento de resolución a 448px) ha sido un éxito. El modelo ha logrado romper la barrera del 78% de precisión en datos externos (Domain Shift), elevándola al 81.57%. 
+
+Lo más destacable es que, al especializar sus capas densas finales, el modelo ha alcanzado un **100% de Sensibilidad (0 Falsos Negativos) de forma nativa**, sin necesidad de trucos matemáticos desestabilizadores (*Focal Loss*) ni sobrecarga computacional en inferencia (*TTA*). Es, hasta la fecha, el modelo médico más robusto y seguro del proyecto. Aunque la precisión podría mejorar con TTA, vamos a hacer un test para comprobarlo.
+
+### 🧪 Evaluación 6: El Comité Médico (TTA 5 Vías a 448px)
+
+### ⚙️ Configuración
+* **Modelo:** DenseNet121 Fine-Tuned (Exp J - Época 7).
+* **Inferencia:** Test-Time Augmentation de 5 vías (Original, Rotación Derecha, Rotación Izquierda, Zoom, Contraste Alterado).
+* **Regla de Decisión:** Votación mayoritaria dura (3 de 5 votos requeridos para diagnóstico positivo).
+* **Objetivo:** Comprobar si un ensamble masivo de variaciones (incluyendo perturbaciones de color/iluminación) logra depurar los últimos Falsos Positivos del modelo.
+
+### 📊 Resultados (Test Set)
+* **Accuracy General:** 81.57%
+
+| Métrica Clínica | Valor | Implicación en el Mundo Real | Comparativa vs TTA 3 Vías |
+| :--- | :--- | :--- | :--- |
+| **Falsos Negativos (FN)** | **0** | 🏆 **Triaje Perfecto Inquebrantable.** | ↔️ Igual (0) |
+| **Falsos Positivos (FP)** | 115 | ⚠️ Paranoia estabilizada. | 📉 Empeora levemente (+2) |
+| **Aciertos Neumonía (TP)** | 390 | Diagnósticos correctos. | ↔️ Igual |
+| **Aciertos Normales (TN)** | 119 | Pacientes sanos dados de alta. | ⬇️ Disminuye (-2) |
+
+### 🧠 Análisis 
+Este experimento demuestra un fenómeno conocido como "Anclaje de Características" (*Feature Anchoring*). El modelo base es tan robusto tras el *Fine-Tuning* a alta resolución que sus predicciones son matemáticamente inamovibles. El comité de 5 vías ha arrojado los mismos resultados exactos que la inferencia pura del modelo base.
+
+**Decisión Arquitectónica para la API:**
+Dado que el TTA de 5 vías quintuplica el coste computacional (latencia del servidor) sin aportar beneficios clínicos adicionales, la arquitectura definitiva para producción será el modelo **DenseNet121 Fine-Tuned Pura** o, como máximo nivel de seguridad, el **TTA de 3 vías**, garantizando el equilibrio óptimo entre velocidad de diagnóstico (UX del médico) y fiabilidad clínica (0 Falsos Negativos).
+
 ---
 
 ## 🧾 Estado del proyecto (marco educativo)
