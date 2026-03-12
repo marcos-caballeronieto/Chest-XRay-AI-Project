@@ -56,7 +56,7 @@
 * **Step 1: Create a Streamlit App**
     * Build a simple UI where a clinician can upload a `.jpg` or `.png` X-ray.
 * **Step 2: Integrate the TTA Pipeline**
-    * Load your saved ResNet18 (Focal Loss) `.pth` model.
+    * Load your saved DenseNet121 (Focal Loss) `.pth` model.
     * Implement the 3-way TTA logic directly in the `app.py` file so the web app uses the safest clinical pipeline.
 * **Step 3: Clinical Sliders & Explainability**
     * Add a slider in the UI allowing the user to adjust the decision threshold (e.g., from conservative to high-sensitivity triage) based on your Threshold Tuning findings.
