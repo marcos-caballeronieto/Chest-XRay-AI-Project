@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from PIL import Image
 import io
+import os
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -15,6 +16,9 @@ app = FastAPI(
 
 device = torch.device("cpu")
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "weights.pth")
+
 # 2. Setup the DenseNet121 Architecture
 def load_model():
     # Load base DenseNet121
@@ -25,12 +29,11 @@ def load_model():
     num_ftrs = model.classifier.in_features
     model.classifier = nn.Linear(num_ftrs, 2)
     
-    # TODO: Replace with your actual DenseNet .pth file name!
     try:
-        model.load_state_dict(torch.load("weights.pth", map_location=device))
-        print("✅ Fine-Tuned DenseNet121 loaded successfully.")
+        model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+        print(f"✅ Fine-Tuned DenseNet121 loaded successfully from {MODEL_PATH}")
     except FileNotFoundError:
-        print("⚠️ Warning: weights.pth not found. API will run, but predictions will be random.")
+        print(f"⚠️ Warning: Model not found at {MODEL_PATH}. Predictions will be random.")
         
     model.to(device)
     model.eval()
