@@ -87,3 +87,16 @@
 * **Step 2: Attention Mechanisms & ViTs**
     * Upgrade the classification engine by transitioning to Vision Transformers (ViTs) or integrating Attention Gates into the existing CNN architecture.
     * Leverage these self-attention mechanisms to dynamically assign mathematical weight to central pathological patches, naturally attenuating peripheral visual noise without the need for hard morphological cropping.
+
+## Phase 6: UI/UX Polish & Ethical AI Guardrails (Days 17-19)
+*The MVP is functional. The goal of this phase is to make the application production-ready, accessible, and ethically compliant before sharing it publicly.*
+
+* **Step 1: Clinical Liability & Ethical Disclaimers**
+    * Implement a persistent, high-visibility warning banner in the UI stating: *"⚠️ STRICTLY FOR ACADEMIC/PORTFOLIO PURPOSES. This is not an FDA-approved medical device. Do not use for actual patient diagnosis."*
+    * Add a session state check requiring the user to click an "I Understand" checkbox before the file uploader becomes active.
+* **Step 2: UI/UX Modernization**
+    * Use Streamlit columns (`st.columns`) to place the original image and the diagnostic results side-by-side for a cleaner medical dashboard feel.
+    * Add visual skeleton loaders or custom `st.spinner` messages (e.g., *"Generating 448px crop...", "Running geometric consensus..."*) to improve perceived latency.
+    * Enforce a strict medical color palette (e.g., soft blues/grays for neutral UI, high-contrast Red only for 'Pneumonia Detected', strict Green for 'Normal').
+* **Step 3: Edge Case Handling (OOD Detection)**
+    * Add logic or a disclaimer acknowledging Out-Of-Distribution (OOD) data (e.g., what happens if a user uploads a picture of a dog instead of an X-ray).
