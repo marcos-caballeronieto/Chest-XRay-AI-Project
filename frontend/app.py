@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from PIL import Image
 import io
+import base64
 
 # 1. Page Configuration (Wide layout for medical dashboard)
 st.set_page_config(
@@ -11,7 +12,8 @@ st.set_page_config(
 )
 
 # 2. The Correct API URL (Cloud deployment)
-API_URL = "https://marcoscaballero27-pneumonia-triage-api.hf.space/predict"
+# API_URL = "https://marcoscaballero27-pneumonia-triage-api.hf.space/predict"
+API_URL = "http://127.0.0.1:8000/predict"
 
 # 3. Header Section
 st.title("🫁 Chest X-Ray Pneumonia Triage")
@@ -80,6 +82,13 @@ else:
                                 st.write(f"- **Original (448px):** {probs['original_448px']:.2%}")
                                 st.write(f"- **Rotated (10°):** {probs['rotated_448px']:.2%}")
                                 st.write(f"- **Zoomed (Crop):** {probs['zoomed_448px']:.2%}")
+                                
+                            if "gradcam_base64" in result and result["gradcam_base64"]:
+                                st.divider()
+                                st.subheader("Grad-CAM Attention Map")
+                                gradcam_bytes = base64.b64decode(result["gradcam_base64"])
+                                gradcam_image = Image.open(io.BytesIO(gradcam_bytes))
+                                st.image(gradcam_image, caption="Red regions indicate high AI feature importance.", use_column_width=True)
                                 
                         else:
                             st.error(f"API Error: {response.status_code} - {response.text}")
