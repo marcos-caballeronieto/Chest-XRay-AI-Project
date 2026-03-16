@@ -11,9 +11,20 @@ st.set_page_config(
     layout="wide"
 )
 
+# Inject custom CSS to stop the wiggle
+st.markdown("""
+    <style>
+        /* Force the vertical scrollbar to always render, or hide it completely */
+        body {
+            overflow-y: scroll; /* Stops the scrollbar from appearing/disappearing */
+            overflow-x: hidden; /* Prevents horizontal wiggling */
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # 2. The Correct API URL (Cloud deployment)
-# API_URL = "https://marcoscaballero27-pneumonia-triage-api.hf.space/predict"
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = "https://marcoscaballero27-pneumonia-triage-api.hf.space/predict"
+#API_URL = "http://127.0.0.1:8000/predict"
 
 # 3. Header Section
 st.title("🫁 Chest X-Ray Pneumonia Triage")
