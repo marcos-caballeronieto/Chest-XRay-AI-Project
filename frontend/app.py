@@ -3,6 +3,7 @@ import requests
 from PIL import Image
 import io
 import base64
+import streamlit.components.v1 as components
 
 # 1. Page Configuration (Wide layout for medical dashboard)
 st.set_page_config(
@@ -11,12 +12,11 @@ st.set_page_config(
     layout="wide"
 )
 
-# Inject custom CSS to stop the wiggle
+# Inject CSS to prevent horizontal wiggle
 st.markdown("""
     <style>
-        /* Target the actual scrolling container in Streamlit */
-        [data-testid="stAppViewContainer"] {
-            overflow-y: scroll !important;
+        /* Prevent horizontal overflow that causes layout wiggling with layout="wide" */
+        html, body, [data-testid="stAppViewContainer"], .main, .block-container {
             overflow-x: hidden !important;
         }
     </style>
@@ -88,7 +88,7 @@ else:
                             st.markdown(f"**TTA Consensus (Votes for Pneumonia):** `{result['confidence_votes']}`")
                             st.caption(result["clinical_metrics"])
                             
-                            with st.expander("🔍 View Raw Probabilities (Softmax)"):
+                            with st.expander("🔍 View Raw Probabilities (Softmax)", expanded=True):
                                 probs = result["raw_probabilities"]
                                 st.write(f"- **Original (448px):** {probs['original_448px']:.2%}")
                                 st.write(f"- **Rotated (10°):** {probs['rotated_448px']:.2%}")
