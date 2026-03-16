@@ -14,10 +14,10 @@ st.set_page_config(
 # Inject custom CSS to stop the wiggle
 st.markdown("""
     <style>
-        /* Force the vertical scrollbar to always render, or hide it completely */
-        body {
-            overflow-y: scroll; /* Stops the scrollbar from appearing/disappearing */
-            overflow-x: hidden; /* Prevents horizontal wiggling */
+        /* Target the actual scrolling container in Streamlit */
+        [data-testid="stAppViewContainer"] {
+            overflow-y: scroll !important;
+            overflow-x: hidden !important;
         }
     </style>
 """, unsafe_allow_html=True)
