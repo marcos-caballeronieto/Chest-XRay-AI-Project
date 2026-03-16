@@ -1,0 +1,45 @@
+name: Sync Frontend to Hugging Face Space
+
+on:
+  push:
+    branches: [main]
+    # IMPORTANT: Only trigger this action if files in the frontend folder change
+    paths:
+      - 'frontend/**' 
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # 1. Clone your Hugging Face Space into a temporary folder called 'hf-space'
+          git clone https://huggingface.co/spaces/marcoscaballero27/pneumonia-triage-ui hf-space
+          
+          # 2. Sync the contents of the GitHub 'frontend' folder to the 'hf-space' folder
+          # The --delete flag ensures that if you delete a file in GitHub, it deletes in HF.
+          # The --exclude='.git' ensures we don't accidentally overwrite the git history.
+          rsync -av --delete --exclude='.git' ./frontend/ ./hf-space/
+          
+          # 3. Commit and push the changes back to Hugging Face
+          cd hf-space
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          
+          # Only commit and push if there are actual changes
+          if git diff-index --quiet HEAD --; then
+            echo "No changes to sync."
+          else
+            git commit -m "Sync frontend from GitHub monorepo"
+            git push
+          fi
