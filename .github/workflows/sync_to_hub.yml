@@ -22,24 +22,22 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # 1. Clone your Hugging Face Space into a temporary folder called 'hf-space'
-          git clone https://huggingface.co/spaces/marcoscaballero27/pneumonia-triage-ui hf-space
+          # 1. Clone the Space
+          git clone https://marcoscaballero27:$HF_TOKEN@huggingface.co/spaces/marcoscaballero27/pneumonia-triage-ui hf-space
           
-          # 2. Sync the contents of the GitHub 'frontend' folder to the 'hf-space' folder
-          # The --delete flag ensures that if you delete a file in GitHub, it deletes in HF.
-          # The --exclude='.git' ensures we don't accidentally overwrite the git history.
-          rsync -av --delete --exclude='.git' ./frontend/ ./hf-space/
+          # 2. Sync the contents, but EXCLUDE critical Hugging Face files from being deleted
+          rsync -av --delete --exclude='.git' --exclude='README.md' --exclude='.gitattributes' --exclude='Dockerfile' ./frontend/ ./hf-space/
           
-          # 3. Commit and push the changes back to Hugging Face
+          # 3. Commit and push
           cd hf-space
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add .
           
-          # Only commit and push if there are actual changes
           if git diff-index --quiet HEAD --; then
             echo "No changes to sync."
           else
             git commit -m "Sync frontend from GitHub monorepo"
-            git push
+            # 4. Explicitly include the token in the push command to fix the auth error
+            git push https://marcoscaballero27:$HF_TOKEN@huggingface.co/spaces/marcoscaballero27/pneumonia-triage-ui main
           fi
