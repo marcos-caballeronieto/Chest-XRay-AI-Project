@@ -63,7 +63,7 @@ else:
         with col_image:
             st.subheader("Radiograph")
             image = Image.open(uploaded_file)
-            st.image(image, use_column_width=True)
+            st.image(image, use_container_width=True)
 
         with col_results:
             st.subheader("AI Analysis")
