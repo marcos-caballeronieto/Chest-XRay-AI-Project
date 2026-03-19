@@ -19,6 +19,11 @@ st.markdown("""
         html, body, [data-testid="stAppViewContainer"], .main, .block-container {
             overflow-x: hidden !important;
         }
+        /* Hide the inner Streamlit scrollbar to prevent the "Double Scrollbar" UX bug in HF Spaces */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent; /* make scrollbar invisible */
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -26,13 +31,19 @@ st.markdown("""
 API_URL = "https://marcoscaballero27-pneumonia-triage-api.hf.space/predict"
 #API_URL = "http://127.0.0.1:8000/predict"
 
-# 3. Header Section
-st.title("🫁 Chest X-Ray Pneumonia Triage")
+# 3. Premium Header Section
 st.markdown("""
-**Clinical Inference Engine:** DenseNet121 (Fine-Tuned at 448px)  
-**Safety Protocol:** 3-Way Test-Time Augmentation (TTA) Consensus  
-*Optimized for 0 False Negatives.*
-""")
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h1 style="font-size: 3rem; font-weight: 800; background: -webkit-linear-gradient(#f8fafc, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        🫁 Chest X-Ray Pneumonia Triage
+    </h1>
+    <p style="font-size: 1.1rem; color: #94a3b8;">
+        <strong>Clinical Inference Engine:</strong> DenseNet121 (Fine-Tuned at 448px)<br>
+        <strong>Safety Protocol:</strong> 3-Way Test-Time Augmentation (TTA) Consensus<br>
+        <span style="color: #60a5fa; font-style: italic;">Optimized for 0 False Negatives.</span>
+    </p>
+</div>
+""", unsafe_allow_html=True)
 st.divider()
 
 # 4. CLINICAL LIABILITY DISCLAIMER 
@@ -53,11 +64,11 @@ if not st.session_state.disclaimer_accepted:
         st.rerun()
 
 else:
-    # Add this explicit OOD warning
-    st.info("""
-    **Note on Image Types:** This model is strictly trained on anterior-posterior (AP) and posteroanterior (PA) chest radiographs. 
+    # Add this explicit OOD warning (Restricted to AP only)
+    st.warning("""
+    **⚠️ Note on Image Types:** This model is strictly trained on **anterior-posterior (AP)** chest radiographs. 
     Uploading non-chest X-ray images (e.g., animals, everyday objects, or other body parts) will result in highly confident, but entirely nonsensical predictions.
-    """)
+    """, icon="⚠️")
     
     uploaded_file = st.file_uploader("Upload a Chest X-Ray Image (JPG/PNG)", type=["jpg", "jpeg", "png"])
 

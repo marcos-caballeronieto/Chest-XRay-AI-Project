@@ -18,3 +18,8 @@ venv.bak/
 __pycache__/
 *.py[cod]
 
+# Playwright
+playwright-report/
+playwright-screenshot/
+.playwright-mcp/
+
