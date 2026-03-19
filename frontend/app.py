@@ -53,7 +53,12 @@ if not st.session_state.disclaimer_accepted:
         st.rerun()
 
 else:
-    # 5. Main Dashboard (Shows only after agreement)
+    # Add this explicit OOD warning
+    st.info("""
+    **Note on Image Types:** This model is strictly trained on anterior-posterior (AP) and posteroanterior (PA) chest radiographs. 
+    Uploading non-chest X-ray images (e.g., animals, everyday objects, or other body parts) will result in highly confident, but entirely nonsensical predictions.
+    """)
+    
     uploaded_file = st.file_uploader("Upload a Chest X-Ray Image (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
     if uploaded_file is not None:

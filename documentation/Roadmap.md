@@ -87,6 +87,9 @@
 * **Step 2: Attention Mechanisms & ViTs**
     * Upgrade the classification engine by transitioning to Vision Transformers (ViTs) or integrating Attention Gates into the existing CNN architecture.
     * Leverage these self-attention mechanisms to dynamically assign mathematical weight to central pathological patches, naturally attenuating peripheral visual noise without the need for hard morphological cropping.
+* **Step 3: Algorithmic Out-of-Distribution (OOD) Handling**
+    * Train a lightweight, secondary binary classifier (e.g., MobileNet) that acts as a gatekeeper to simply distinguish "Is this a frontal Chest X-Ray? Yes/No."
+    * Alternatively, implement feature-space outlier detection (using Mahalanobis distance on the latent representations) to automatically mathematically reject non-radiograph inputs before running the costly Pneumonia Triage protocol.
 
 ## Phase 6: UI/UX Polish & Ethical AI Guardrails (Days 17-19)
 *The MVP is functional. The goal of this phase is to make the application production-ready, accessible, and ethically compliant before sharing it publicly.*
