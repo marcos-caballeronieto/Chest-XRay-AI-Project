@@ -66,7 +66,7 @@ if not st.session_state.disclaimer_accepted:
 else:
     # Add this explicit OOD warning (Restricted to AP only)
     st.warning("""
-    **⚠️ Note on Image Types:** This model is strictly trained on **anterior-posterior (AP)** chest radiographs. 
+    ** Note on Image Types:** This model is strictly trained on **anterior-posterior (AP)** chest radiographs. 
     Uploading non-chest X-ray images (e.g., animals, everyday objects, or other body parts) will result in highly confident, but entirely nonsensical predictions.
     """, icon="⚠️")
     
@@ -115,7 +115,8 @@ else:
                                 st.subheader("Grad-CAM Attention Map")
                                 gradcam_bytes = base64.b64decode(result["gradcam_base64"])
                                 gradcam_image = Image.open(io.BytesIO(gradcam_bytes))
-                                st.image(gradcam_image, caption="Red regions indicate high AI feature importance.", use_column_width=True)
+                                st.image(gradcam_image, caption="Red regions indicate high AI feature importance.", use_container_width=True)
+                                st.info("ℹ️ **Future Roadmap Notice:** If the heatmap highlights peripheral areas like shoulders or arms, this is a known 'shortcut learning' effect. As documented in our V2 Roadmap, future versions will implement a Lung Segmentation Pipeline to force the model to focus exclusively on pulmonary parenchyma textures.")
                                 
                         else:
                             st.error(f"API Error: {response.status_code} - {response.text}")
