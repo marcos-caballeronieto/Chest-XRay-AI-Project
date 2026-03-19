@@ -116,7 +116,7 @@ else:
                                 gradcam_bytes = base64.b64decode(result["gradcam_base64"])
                                 gradcam_image = Image.open(io.BytesIO(gradcam_bytes))
                                 st.image(gradcam_image, caption="Red regions indicate high AI feature importance.", use_container_width=True)
-                                st.info("ℹ️ **Future Roadmap Notice:** If the heatmap highlights peripheral areas like shoulders or arms, this is a known 'shortcut learning' effect. As documented in our V2 Roadmap, future versions will implement a Lung Segmentation Pipeline to force the model to focus exclusively on pulmonary parenchyma textures.")
+                                st.info("ℹ️ **Future Roadmap Notice:** The heatmap may highlight peripheral areas like shoulders or arms, this is a known 'shortcut learning' effect. As documented in our V2 Roadmap, future versions will implement a Lung Segmentation Pipeline to force the model to focus exclusively on pulmonary parenchyma textures.")
                                 
                         else:
                             st.error(f"API Error: {response.status_code} - {response.text}")
