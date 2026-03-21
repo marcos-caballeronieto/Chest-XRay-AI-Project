@@ -40,7 +40,7 @@ En un entorno médico, la asimetría del error es crítica:
 ### 🧠 Análisis (Conclusión del Exp. A)
 El experimento sirve como un *baseline* excepcional. Alcanzar casi un 96% de precisión en solo 5 epochs demuestra la potencia del Transfer Learning. El modelo no sufre de *overfitting* (la pérdida de validación es menor que la de entrenamiento). 
 
-Sin embargo, desde el punto de vista del producto, **19 Falsos Negativos es una cifra de riesgo**. El modelo es demasiado "equilibrado". Necesitamos sesgarlo para que sea más conservador a la hora de predecir que un paciente está "Sano".
+Sin embargo, desde el punto de vista del producto, **19 Falsos Negativos es una cifra de riesgo**. El modelo es demasiado "equilibrado". Necesitamos sesgarlo para que sea más conservador a la hora de predecir que un paciente está "Sano". Aunque antes probaremos a balancear las clases matemáticamente para ver si mejora los resultados.
 
 ---
 
@@ -208,7 +208,7 @@ Este experimento demuestra que aumentar el esfuerzo en la fase de inferencia pue
 
 Al forzar un consenso de 3 vías (TTA), el modelo ha demostrado una robustez espectacular frente a posibles sesgos de posición o encuadre en las radiografías. Hemos logrado la mejor métrica clínica (Sensibilidad del 99.2%, con solo 6 Falsos Negativos) manteniendo los Falsos Positivos a raya y logrando el pico máximo de *Accuracy* general del proyecto (97.23%).
 
-**Veredicto (simulación):** Para la siguiente fase experimental, tomamos como referencia el modelo C2 (`[1.0, 1.2]`) junto con un pipeline de 3 transformaciones y votación mayoritaria en inferencia.
+**Veredicto (simulación):** Por ahora este es el mejor modelo que hemos obtenido, el modelo C2 (`[1.0, 1.2]`) junto con un pipeline de 3 transformaciones y votación mayoritaria en inferencia.
 
 
 
