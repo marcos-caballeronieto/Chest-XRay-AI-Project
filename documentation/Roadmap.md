@@ -5,7 +5,7 @@
 
 ---
 
-## Phase 1: Setup & Clinical EDA (Days 1-3)
+## Phase 1: Setup & Clinical EDA 
 *The goal here is to load the images, fix the validation split, and understand the clinical cost of errors.*
 
 * **Step 1: Environment Setup**
@@ -18,7 +18,7 @@
 
 ---
 
-## Phase 2: Model Training & Experimentation (Days 4-8)
+## Phase 2: Model Training & Experimentation 
 *Instead of just building a model, you will document the journey of finding the right loss function to handle the clinical asymmetry.* 
 
 * **Step 1: Baseline Model (Experiment A)**
@@ -34,7 +34,7 @@
 
 ---
 
-## Phase 3: Post-Processing & Inferencia (Days 9-11)
+## Phase 3: Post-Processing & Inferencia 
 *This is where your project shines. You will separate mathematical training from clinical decision-making.*
 
 * **Step 1: Threshold Tuning (Experiment D & G)**
@@ -50,7 +50,7 @@
 
 ---
 
-## Phase 4: Web Application / UI (Days 12-14)
+## Phase 4: Web Application / UI 
 *Getting the triage system into a usable app for a hypothetical Radiology Department.*
 
 * **Step 1: Create a Streamlit App**
@@ -64,7 +64,7 @@
 
 ---
 
-## Phase 5: Portfolio Packaging (Days 15-16)
+## Phase 5: Portfolio Packaging 
 *Making your extensive experimentation stand out for recruiters.*
 
 * **Step 1: Clean the Code**
@@ -91,7 +91,7 @@
     * Train a lightweight, secondary binary classifier (e.g., MobileNet) that acts as a gatekeeper to simply distinguish "Is this a frontal Chest X-Ray? Yes/No."
     * Alternatively, implement feature-space outlier detection (using Mahalanobis distance on the latent representations) to automatically mathematically reject non-radiograph inputs before running the costly Pneumonia Triage protocol.
 
-## Phase 6: UI/UX Polish & Ethical AI Guardrails (Days 17-19)
+## Phase 6: UI/UX Polish & Ethical AI Guardrails
 *The MVP is functional. The goal of this phase is to make the application production-ready, accessible, and ethically compliant before sharing it publicly.*
 
 * **Step 1: Clinical Liability & Ethical Disclaimers**
