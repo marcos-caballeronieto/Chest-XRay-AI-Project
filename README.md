@@ -8,8 +8,10 @@
 > This project is an academic exploration of ML optimization and is **not** an FDA-approved medical device. It must not be used for actual diagnosis or clinical decision-making.
 
 > 🌐 **Live Interactive Demo:**
-> **Note:** You may need to start the backend API and the frontend Streamlit app separately. 
+> **Note:** You may need to start the backend API and the frontend Streamlit app separately.
+> 
 > **Backend API:** [`https://huggingface.co/spaces/marcoscaballero27/pneumonia-triage-api`](https://huggingface.co/spaces/marcoscaballero27/pneumonia-triage-api)
+> 
 > **Frontend Streamlit app:** [`https://huggingface.co/spaces/marcoscaballero27/pneumonia-triage-ui`](https://huggingface.co/spaces/marcoscaballero27/pneumonia-triage-ui)  
 
 ---
