@@ -44,7 +44,7 @@ graph LR
 
 ## 🧪 The Data Science Journey
 
-The core value of this project lies in the rigorous experimentation process documented in the [Training Logs](Documentation/Training_LOGS.md). Here is a summary of the path to zero False Negatives:
+The core value of this project lies in the rigorous experimentation process documented in the [Training Logs](documentation/Training_LOGS.md). Here is a summary of the path to zero False Negatives:
 
 ### 1. The Baseline & The Pitfalls of Class Weights
 - **Starting Point (ResNet18):** Transfer learning achieved ~96% accuracy rapidly but left **19 False Negatives**, which is clinically unacceptable.
