@@ -107,8 +107,8 @@ To run the full Streamlit UI and inference engine locally:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/Chest_XRay_AI.git
-cd Chest_XRay_AI
+git clone https://github.com/marcos-caballeronieto/Chest-XRay-AI-Project.git
+cd Chest-XRay-AI-Project
 
 # 2. Create a virtual environment (Recommended)
 python -m venv venv
