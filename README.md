@@ -99,28 +99,3 @@ To move beyond the MVP and solve ML "Shortcut Learning" (where models look at th
 
 > **Note on Language:** While this README and the core analysis are in English, you may notice some underlying documentation and code comments (`Training_LOGS.es.md`, etc.) are in Spanish. The foundational experimentation steps were originally conceptualized and drafted in Spanish. They remain for legacy completeness but are non-relevant to the core application logic and final architecture.
 
----
-
-## 💻 Local Installation & Usage
-
-To run the full Streamlit UI and inference engine locally:
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/marcos-caballeronieto/Chest-XRay-AI-Project.git
-cd Chest-XRay-AI-Project
-
-# 2. Create a virtual environment (Recommended)
-python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Run the Streamlit Application (adjust the path if necessary)
-streamlit run app.py
-```
-*(Ensure you have downloaded the required pre-trained weights into the `Weights/` directory as specified in the UI codebase prior to running the application).*
